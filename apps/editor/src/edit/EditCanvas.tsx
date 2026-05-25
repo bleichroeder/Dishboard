@@ -14,7 +14,7 @@ import { useEditor } from './EditorContext.js';
 import { TemplateStyles } from './TemplateStyles.js';
 
 const DESIGN_WIDTH = 1920;
-const FIT_MAX_SCALE = 1.0;
+const FIT_MARGIN = 0.96;
 
 export function EditCanvas() {
   const { menu, update } = useEditor();
@@ -31,9 +31,15 @@ export function EditCanvas() {
 
   return (
     <div className="edit-canvas-area">
-      <FitToWidth>
-        <div className="menu-render" style={buildThemeStyle(menu.theme)}>
-          <BackgroundLayer theme={menu.theme} />
+      <FitToContainer>
+        <div
+          className="menu-render"
+          style={{
+            ...buildThemeStyle(menu.theme),
+            ...buildBackgroundStyle(menu.theme),
+          }}
+        >
+          <BackgroundOverlay theme={menu.theme} />
           <TemplateStyles template={template} selector=".menu-render__grid" />
           <header className="menu-render__header">
             <EditableText
@@ -49,16 +55,21 @@ export function EditCanvas() {
           </header>
           <RegionGrid menu={menu} template={template} />
         </div>
-      </FitToWidth>
+      </FitToContainer>
     </div>
   );
 }
 
-function FitToWidth({ children }: { children: React.ReactNode }) {
+/**
+ * Mirrors the viewer's ScalableMenu: width is fixed at the design
+ * canvas size (1920px) and height is content-driven. We compute the
+ * largest uniform scale that fits both axes inside the container so
+ * the editor canvas renders exactly what the viewer would show.
+ */
+function FitToContainer({ children }: { children: React.ReactNode }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const [height, setHeight] = useState<number | undefined>(undefined);
 
   useLayoutEffect(() => {
     const wrap = wrapRef.current;
@@ -67,11 +78,12 @@ function FitToWidth({ children }: { children: React.ReactNode }) {
     function compute() {
       if (!wrap || !scaler) return;
       const containerW = wrap.clientWidth;
+      const containerH = wrap.clientHeight;
+      const naturalW = scaler.offsetWidth;
       const naturalH = scaler.offsetHeight;
-      if (containerW <= 0 || naturalH <= 0) return;
-      const s = Math.min(FIT_MAX_SCALE, containerW / DESIGN_WIDTH);
-      setScale(s);
-      setHeight(naturalH * s);
+      if (containerW <= 0 || containerH <= 0 || naturalW <= 0 || naturalH <= 0) return;
+      const next = Math.min(containerW / naturalW, containerH / naturalH) * FIT_MARGIN;
+      setScale(next);
     }
     compute();
     const obs = new ResizeObserver(compute);
@@ -81,13 +93,13 @@ function FitToWidth({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={wrapRef} className="edit-canvas-fit" style={{ height }}>
+    <div ref={wrapRef} className="edit-canvas-fit">
       <div
         ref={scalerRef}
         className="edit-canvas-scaler"
         style={{
-          transform: `scale(${scale})`,
           width: DESIGN_WIDTH,
+          transform: `scale(${scale})`,
         }}
       >
         {children}
@@ -115,53 +127,48 @@ function buildThemeStyle(theme: Theme | undefined): CSSProperties {
   return style as CSSProperties;
 }
 
-function BackgroundLayer({ theme }: { theme: Theme | undefined }) {
+/**
+ * Apply the menu's background as an actual CSS background on the
+ * .menu-render element so it sits below the fallback bg color rather
+ * than fighting it via z-index. Returns the style props to merge.
+ */
+function buildBackgroundStyle(theme: Theme | undefined): CSSProperties {
   const bg = theme?.background;
-  if (!bg || bg.type === 'none') return null;
+  if (!bg || bg.type === 'none') return {};
   if (bg.type === 'color') {
-    return (
-      <div
-        className="menu-render__bg"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: bg.color,
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
-    );
+    return { background: bg.color };
   }
-  const overlay = bg.overlayOpacity ?? 0;
+  // image
   const fit = bg.fit ?? 'cover';
+  return {
+    backgroundImage: `url('/media/${bg.assetId}')`,
+    backgroundPosition: 'center',
+    backgroundRepeat: fit === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundSize: fit === 'cover' ? 'cover' : fit === 'contain' ? 'contain' : 'auto',
+    backgroundColor: '#1a1612',
+  };
+}
+
+/**
+ * Optional darkening layer painted over the background image so item
+ * text stays readable. The menu content renders above it via DOM order
+ * plus position:relative on the children that need it.
+ */
+function BackgroundOverlay({ theme }: { theme: Theme | undefined }) {
+  const bg = theme?.background;
+  if (!bg || bg.type !== 'image') return null;
+  const overlay = bg.overlayOpacity ?? 0;
+  if (overlay <= 0) return null;
   return (
-    <>
-      <div
-        className="menu-render__bg"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url('/media/${bg.assetId}')`,
-          backgroundPosition: 'center',
-          backgroundRepeat: fit === 'repeat' ? 'repeat' : 'no-repeat',
-          backgroundSize: fit === 'cover' ? 'cover' : fit === 'contain' ? 'contain' : 'auto',
-          zIndex: -2,
-          pointerEvents: 'none',
-        }}
-      />
-      {overlay > 0 && (
-        <div
-          className="menu-render__bg-overlay"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `rgba(0, 0, 0, ${overlay})`,
-            zIndex: -1,
-            pointerEvents: 'none',
-          }}
-        />
-      )}
-    </>
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: `rgba(0, 0, 0, ${overlay})`,
+        pointerEvents: 'none',
+      }}
+    />
   );
 }
 

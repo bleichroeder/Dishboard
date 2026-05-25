@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Menu } from '@dishboard/shared';
 import { api } from '../api.js';
-import { PreviewModal } from '../components/PreviewModal.js';
 import { EditCanvas } from '../edit/EditCanvas.js';
 import { EditorProvider, useEditor } from '../edit/EditorContext.js';
 import { SidePanel } from '../edit/SidePanel.js';
@@ -104,7 +103,6 @@ function EditorShell({
 }) {
   const { menu, update } = useEditor();
   const navigate = useNavigate();
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
 
   async function onSave() {
@@ -167,14 +165,6 @@ function EditorShell({
           {savingState === 'saved' && !dirty && <span className="saved-pill">Saved</span>}
           <button
             type="button"
-            className="btn btn--secondary"
-            onClick={() => setPreviewOpen(true)}
-            title={dirty ? 'Preview shows the last saved version' : 'Open viewer'}
-          >
-            Preview
-          </button>
-          <button
-            type="button"
             className="btn btn--primary"
             onClick={onSave}
             disabled={!dirty || savingState === 'saving'}
@@ -197,8 +187,6 @@ function EditorShell({
         <EditCanvas />
         {panelOpen && <SidePanel />}
       </div>
-
-      {previewOpen && <PreviewModal slug={menu.slug} onClose={() => setPreviewOpen(false)} />}
     </div>
   );
 }

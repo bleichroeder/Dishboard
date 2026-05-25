@@ -18,15 +18,15 @@
   --font-marker: 'Permanent Marker', 'Chalkduster', cursive;
   --font-body: 'Montserrat', -apple-system, system-ui, 'Segoe UI', sans-serif;
 
+  /* Fallback bg color — overridden inline when the menu has a theme
+     background (image or custom color). */
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
   padding: 2rem 2.5rem;
   position: relative;
   width: 1920px;
-  transform-origin: top left;
-  /* transform: scale(...) is applied inline by the React component to
-     fit the available canvas area. */
+  /* transform: scale(...) is applied inline by the React component. */
 }
 
 .menu-render * {
@@ -167,6 +167,32 @@
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* Variant style densities — match the viewer's .items--{cards,list,compact}. */
+
+.menu-render__items--cards .menu-render__item {
+  padding: 0.625rem 0;
+}
+
+.menu-render__items--cards .menu-render__item-name {
+  font-size: calc(1.375rem * var(--theme-item-scale, 1));
+}
+
+.menu-render__items--list .menu-render__item {
+  padding: 0.4375rem 0;
+}
+
+.menu-render__items--list .menu-render__item-name {
+  font-size: calc(1.1875rem * var(--theme-item-scale, 1));
+}
+
+.menu-render__items--compact .menu-render__item {
+  padding: 0.3125rem 0;
+}
+
+.menu-render__items--compact .menu-render__item-name {
+  font-size: calc(1.0625rem * var(--theme-item-scale, 1));
 }
 
 .menu-render__item {

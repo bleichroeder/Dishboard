@@ -1692,21 +1692,31 @@ textarea.field__input {
 
 .edit-canvas-area {
   flex: 1 1 auto;
-  overflow: auto;
+  overflow: hidden;
   background: #0e0a07;
-  padding: 1.5rem;
+  padding: 1rem;
   min-width: 0;
+  min-height: 0;
+  display: flex;
 }
 
 .edit-canvas-fit {
-  width: 100%;
-  display: block;
+  flex: 1 1 auto;
   position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
 }
 
 .edit-canvas-scaler {
-  /* width set inline (1920), transform scale applied inline */
-  transform-origin: top left;
+  /* width set inline (1920), transform: scale() applied inline. Centered
+     in the fit container via flex. Pure scale (no translate) so the
+     percentage translate doesn't fight with the scale. */
+  flex: 0 0 auto;
+  transform-origin: center center;
 }
 
 /* === Side panel === */
