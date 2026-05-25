@@ -11,6 +11,16 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Full-bleed editor — its own toolbar replaces the standard nav so
+          the canvas + side panel can use the whole viewport width. */}
+      <Route
+        path="/menus/:slug"
+        element={
+          <Protected>
+            <MenuEditorPage />
+          </Protected>
+        }
+      />
       <Route
         path="/"
         element={
@@ -20,7 +30,6 @@ export function App() {
         }
       >
         <Route index element={<MenuListPage />} />
-        <Route path="menus/:slug" element={<MenuEditorPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
       </Route>
