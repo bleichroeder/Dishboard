@@ -16,8 +16,8 @@ export const TEMPLATES: readonly Template[] = [
     ],
     breakpoints: {
       kiosk: {
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gridTemplateRows: '1fr 1fr',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
+        gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
         gridTemplateAreas: '"r1 r2 r3" "r4 r5 r6"',
       },
       tablet: {
@@ -45,8 +45,8 @@ export const TEMPLATES: readonly Template[] = [
     ],
     breakpoints: {
       kiosk: {
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gridTemplateRows: 'auto 1fr',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
+        gridTemplateRows: 'auto minmax(0, 1fr)',
         gridTemplateAreas: '"featured featured featured" "r1 r2 r3"',
       },
       tablet: {
@@ -105,8 +105,8 @@ export const TEMPLATES: readonly Template[] = [
     ],
     breakpoints: {
       kiosk: {
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '1fr 1fr',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+        gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
         gridTemplateAreas: '"tl tr" "bl br"',
       },
       tablet: {
