@@ -111,7 +111,72 @@ In active rebuild. The legacy version lives at `C:\Users\David\Desktop\Dishboard
 - [x] Phase 2 — Viewer: template renderer, slot rendering (static + rotating), daypart polling
 - [x] Phase 3 — Editor: menu CRUD, slot/variant editing, schedule UI
 - [x] Phase 4 — Square integration: token settings, item picker, background price/availability sync
-- [ ] Phase 5 — Raspberry Pi deploy: systemd unit, kiosk autostart, build pipeline
+- [x] Phase 5 — Raspberry Pi deploy: systemd unit, kiosk autostart, build pipeline
+
+## Raspberry Pi deploy
+
+In production, the Fastify server serves the built viewer at `/`, the built editor at `/editor`, and the API at `/api`. One process, one port — no reverse proxy needed.
+
+### One-time install
+
+Tested on Raspberry Pi OS Bookworm (64-bit). A Pi 4 with 2–4 GB RAM is plenty. The `better-sqlite3` native module compiles on first install, so build tools must be present.
+
+```bash
+# 1. Prereqs (build tools for better-sqlite3, then Node 22 via NodeSource)
+sudo apt update
+sudo apt install -y build-essential python3 git curl chromium-browser
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 2. Clone + build
+cd ~
+git clone https://github.com/bleichroeder/Dishboard.git dishboard
+cd dishboard
+npm ci
+npm run build           # builds shared, server, viewer, editor
+
+# 3. Configure server env
+cp apps/server/.env.example apps/server/.env
+# Generate a password hash and cookie secret:
+node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 10))" "your-admin-password"
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+# Paste those into apps/server/.env, set HOST=0.0.0.0 PORT=8080
+
+# 4. (optional) Import legacy data
+npm run migrate:legacy -w @dishboard/server -- /path/to/old/Dishboard
+
+# 5. systemd
+sudo sed -e "s|__INSTALL_DIR__|$HOME/dishboard|g" \
+         -e "s|__USER__|$USER|g" \
+         deploy/dishboard.service | sudo tee /etc/systemd/system/dishboard.service > /dev/null
+sudo systemctl daemon-reload
+sudo systemctl enable --now dishboard.service
+sudo systemctl status dishboard.service   # confirm "active (running)"
+
+# 6. Kiosk autostart (LXDE / XDG)
+mkdir -p ~/.config/autostart
+cp deploy/dishboard-kiosk.desktop ~/.config/autostart/
+```
+
+Reboot. Chromium will wait for `/health` to respond, then load the viewer at `http://localhost:8080/` in kiosk mode.
+
+The editor is at `http://<pi-ip>:8080/editor` from any device on the LAN — that's the URL you'll bookmark on your phone.
+
+### Updating
+
+```bash
+cd ~/dishboard
+git pull
+npm ci
+npm run build
+sudo systemctl restart dishboard.service
+```
+
+### Notes
+
+- **Port 80**: if you want to serve on port 80 instead of 8080, either set `PORT=80` and grant Node the `cap_net_bind_service` capability (`sudo setcap 'cap_net_bind_service=+ep' $(which node)`), or front the server with nginx/Caddy.
+- **HTTPS**: in production, set `COOKIE_SECURE=true` in `.env` so the session cookie is only sent over TLS. Front the server with Caddy for automatic Let's Encrypt if exposing publicly.
+- **Square**: the access token is set from the editor's Integrations page, not env. It's stored in SQLite under `data/dishboard.db`.
 
 ## License
 

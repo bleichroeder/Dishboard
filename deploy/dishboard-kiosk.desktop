@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Dishboard Viewer
+Comment=Open the Dishboard menu viewer in Chromium kiosk mode
+Exec=sh -c 'until curl -fs http://localhost:8080/health >/dev/null; do sleep 1; done; chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-pinch --overscroll-history-navigation=0 http://localhost:8080/'
+X-GNOME-Autostart-enabled=true

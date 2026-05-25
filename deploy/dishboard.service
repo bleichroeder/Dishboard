@@ -1,0 +1,36 @@
+; Systemd unit for the Dishboard server.
+;
+; Copy to /etc/systemd/system/dishboard.service and substitute __INSTALL_DIR__
+; and __USER__ before enabling. Example install (assuming user 'pi' and a
+; clone at /home/pi/dishboard):
+;
+;   sudo sed -e 's|__INSTALL_DIR__|/home/pi/dishboard|g' \
+;            -e 's|__USER__|pi|g' \
+;            deploy/dishboard.service > /etc/systemd/system/dishboard.service
+;   sudo systemctl daemon-reload
+;   sudo systemctl enable --now dishboard.service
+
+[Unit]
+Description=Dishboard server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__INSTALL_DIR__
+Environment=NODE_ENV=production
+EnvironmentFile=-__INSTALL_DIR__/apps/server/.env
+ExecStart=/usr/bin/node __INSTALL_DIR__/apps/server/dist/index.js
+Restart=on-failure
+RestartSec=5
+
+; Hardening: read-only system, writable data dir, no new privileges.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__INSTALL_DIR__/data __INSTALL_DIR__/apps/server/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

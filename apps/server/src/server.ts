@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.js';
 import { menuRoutes } from './routes/menus.js';
 import { scheduleRoutes } from './routes/schedule.js';
 import { integrationRoutes } from './routes/integrations.js';
+import { registerStatic } from './static.js';
 import { startSquareSyncLoop } from './sync.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
@@ -21,6 +22,9 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(menuRoutes);
   await app.register(scheduleRoutes);
   await app.register(integrationRoutes);
+
+  // Register static serving AFTER the API routes so they take precedence.
+  await registerStatic(app);
 
   startSquareSyncLoop(config.squareSyncIntervalMs, {
     info: (msg) => app.log.info(msg),
