@@ -1,31 +1,42 @@
 :root {
-  --bg: #15110d;
-  --bg-elevated: #1f1a14;
-  --bg-card: #25201a;
-  --bg-input: #1a1611;
-  --text: #f6e8c8;
-  --text-dim: #c0a87a;
-  --text-faint: #8a7a55;
-  --accent: #d49a3a;
-  --accent-hover: #e2ad4f;
-  --accent-dim: #8c682a;
-  --danger: #ff7070;
-  --danger-bg: rgba(255, 112, 112, 0.12);
-  --warn: #e4b04f;
-  --warn-bg: rgba(228, 176, 79, 0.1);
-  --info: #5cb6e8;
-  --border: #3a2f22;
-  --border-strong: #4d3f2e;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  /* Brand */
+  --brand-dish: #ff6b6b;
+  --brand-board: #4ecdc4;
+
+  /* Surfaces (light theme) */
+  --bg: #f7f4ee;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+
+  /* Text on light */
+  --text: #1f2937;
+  --text-dim: #4b5563;
+  --text-faint: #9ca3af;
+
+  /* Primary action = teal; secondary emphasis = coral */
+  --accent: var(--brand-board);
+  --accent-hover: #3db8af;
+  --accent-dim: #c4eeea;
+
+  /* Status */
+  --danger: #e85555;
+  --danger-bg: rgba(255, 107, 107, 0.1);
+  --warn: #c97a1a;
+  --warn-bg: rgba(228, 160, 79, 0.15);
+  --info: #2b8aaf;
+
+  /* Lines & shadows */
+  --border: #e5e1d8;
+  --border-strong: #cfc9bd;
+  --shadow: 0 1px 3px rgba(31, 41, 55, 0.08), 0 1px 2px rgba(31, 41, 55, 0.04);
+  --shadow-lg: 0 10px 25px rgba(31, 41, 55, 0.12), 0 5px 10px rgba(31, 41, 55, 0.05);
+
   --radius: 0.5rem;
   --radius-sm: 0.3125rem;
   --font-display: 'Montserrat', system-ui, sans-serif;
   --font-body: 'Montserrat', -apple-system, system-ui, 'Segoe UI', sans-serif;
-  /* Dishboard brand colors (legacy) */
-  --brand-dish: #ff6b6b;
-  --brand-board: #4ecdc4;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -386,7 +397,7 @@ code {
 
 .btn--primary {
   background: var(--accent);
-  color: #1a120a;
+  color: #ffffff;
 }
 
 .btn--primary:not(:disabled):hover {
@@ -493,7 +504,7 @@ code {
   padding: 0.5rem 0.75rem;
   background: var(--bg-input);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
 }
 
@@ -720,7 +731,7 @@ textarea.field__input {
 
 .variant-tab--active {
   background: var(--accent);
-  color: #1a120a;
+  color: #ffffff;
   border-color: var(--accent);
 }
 
@@ -996,7 +1007,7 @@ textarea.field__input {
 
 .day-chip--on {
   background: var(--accent);
-  color: #1a120a;
+  color: #ffffff;
   border-color: var(--accent);
 }
 
