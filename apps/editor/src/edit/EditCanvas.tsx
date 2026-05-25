@@ -423,34 +423,39 @@ function EditableItem({
           onSelect={() => select({ kind: 'item', slotId, variantId, itemId: item.id })}
         />
       </div>
-      <EditableText
-        tag="p"
-        className="menu-render__item-description"
-        ariaLabel="Item description"
-        multiline
-        value={item.description ?? ''}
-        onChange={(next) =>
-          withItem((i) => {
-            i.description = next || undefined;
-          })
-        }
-      />
-      <EditableText
-        tag="p"
-        className="menu-render__item-ingredients"
-        ariaLabel="Ingredients"
-        value={item.ingredients.join(', ')}
-        onChange={setIngredients}
-      />
-      {(item.soldOut || item.hidden || item.squareRef) && (
+      {/* Only render description/ingredients editables when they have
+          content, or when the item is selected. Keeps the canvas's
+          vertical density matching what the viewer would actually show
+          (empty fields don't render in the viewer at all). */}
+      {(item.description || isSelected) && (
+        <EditableText
+          tag="p"
+          className="menu-render__item-description"
+          ariaLabel="Item description"
+          multiline
+          value={item.description ?? ''}
+          onChange={(next) =>
+            withItem((i) => {
+              i.description = next || undefined;
+            })
+          }
+        />
+      )}
+      {(item.ingredients.length > 0 || isSelected) && (
+        <EditableText
+          tag="p"
+          className="menu-render__item-ingredients"
+          ariaLabel="Ingredients"
+          value={item.ingredients.join(', ')}
+          onChange={setIngredients}
+        />
+      )}
+      {/* Only render the sold-out badge on canvas — that's what the viewer
+          actually shows. Hidden + Square are editing-internal and live in
+          the Slot panel's item-detail section. */}
+      {item.soldOut && (
         <div className="menu-render__item-badges">
-          {item.soldOut && <span className="menu-render__item-badge">sold out</span>}
-          {item.hidden && (
-            <span className="menu-render__item-badge menu-render__item-badge--muted">hidden</span>
-          )}
-          {item.squareRef && (
-            <span className="menu-render__item-badge menu-render__item-badge--info">Square</span>
-          )}
+          <span className="menu-render__item-badge">sold out</span>
         </div>
       )}
     </li>
