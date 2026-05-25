@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api.js';
 import { useAuth } from '../auth.js';
+import { SplashDots, Wordmark } from '../components/Wordmark.js';
 
 export function LoginPage() {
   const { status, refresh } = useAuth();
@@ -31,7 +32,10 @@ export function LoginPage() {
   return (
     <div className="login-shell">
       <form className="login-card" onSubmit={onSubmit}>
-        <h1 className="login-title">Dishboard</h1>
+        <div className="login-brand">
+          <Wordmark size="2.5rem" />
+          {busy && <SplashDots />}
+        </div>
         <p className="login-sub">Sign in to manage menus.</p>
         <label className="field">
           <span className="field__label">Username</span>

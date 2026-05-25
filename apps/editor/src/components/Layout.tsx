@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.js';
+import { Wordmark } from './Wordmark.js';
 
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
@@ -17,7 +18,7 @@ export function Layout() {
     <div className="app-shell">
       <header className="app-header">
         <Link to="/" className="app-brand" onClick={close}>
-          Dishboard
+          <Wordmark size="1.5rem" />
         </Link>
         <button
           type="button"

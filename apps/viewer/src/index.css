@@ -1,15 +1,20 @@
+/* Legacy-style menu-board palette: deep moody backdrop, ivory body text,
+   red section titles, gold accents, hand-lettered prices. */
 :root {
   --bg: #1a1612;
-  --bg-elevated: #25201a;
-  --text: #f6e8c8;
-  --text-dim: #c0a87a;
-  --text-faint: #8a7a55;
-  --accent: #d49a3a;
+  --bg-elevated: rgba(0, 0, 0, 0.32);
+  --text: #fffbe6;
+  --text-dim: #f0e4c0;
+  --text-faint: #c9bb91;
+  --accent: #ffe6a0; /* gold */
+  --accent-strong: #ffc857;
+  --section-title: #e53935;
   --error: #ff7070;
-  --border: #3a2f22;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --font-display: 'Georgia', 'Cambria', serif;
-  --font-body: -apple-system, system-ui, 'Segoe UI', sans-serif;
+  --border: rgba(255, 230, 160, 0.25);
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+  --font-display: 'Lilita One', 'Cambria', cursive;
+  --font-marker: 'Permanent Marker', 'Chalkduster', cursive;
+  --font-body: 'Montserrat', -apple-system, system-ui, 'Segoe UI', sans-serif;
   color-scheme: dark;
 }
 
@@ -29,7 +34,7 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -54,16 +59,19 @@ main {
 
 .menu-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .menu-header h1 {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-family: var(--font-marker);
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
   letter-spacing: 0.04em;
   color: var(--accent);
   margin: 0;
   font-weight: 400;
+  text-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.6),
+    0 0 14px rgba(255, 230, 160, 0.18);
 }
 
 .menu-grid {
@@ -81,40 +89,49 @@ main {
 }
 
 .menu-region--empty {
-  /* placeholder cell for unfilled regions; invisible */
+  /* placeholder cell — invisible */
 }
 
 .section {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   padding: 1.5rem;
   box-shadow: var(--shadow);
   position: relative;
   min-width: 0;
+  backdrop-filter: blur(2px);
 }
 
 .section__header {
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px dashed rgba(255, 251, 230, 0.35);
 }
 
 .section__title {
   font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-  color: var(--accent);
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  color: var(--section-title);
   margin: 0;
-  letter-spacing: 0.03em;
   font-weight: 400;
+  letter-spacing: 0.02em;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 3px 2px rgba(0, 0, 0, 0.55);
 }
 
 .section__description {
   margin: 0.5rem 0 0;
   color: var(--text-dim);
   font-size: 0.875rem;
+  font-family: 'Georgia', serif;
   font-style: italic;
   line-height: 1.4;
+  opacity: 0.85;
 }
 
 .section--rotating::after {
@@ -125,15 +142,15 @@ main {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 0.3rem rgba(212, 154, 58, 0.15);
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 0.3rem rgba(255, 200, 87, 0.18);
   animation: rotating-dot 2s ease-in-out infinite;
 }
 
 @keyframes rotating-dot {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
   50% {
     opacity: 1;
@@ -147,8 +164,8 @@ main {
 }
 
 .item {
-  padding: 0.75rem 0;
-  border-bottom: 1px dashed var(--border);
+  padding: 0.625rem 0;
+  border-bottom: 1px dotted rgba(226, 211, 192, 0.45);
 }
 
 .item:last-child {
@@ -158,27 +175,39 @@ main {
 .item__head {
   display: flex;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: 0.875rem;
   justify-content: space-between;
 }
 
 .item__name {
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-weight: 700;
   color: var(--text);
+  text-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.55),
+    0 0 1px rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.01em;
 }
 
 .item__price {
-  color: var(--accent);
+  font-family: var(--font-marker);
+  font-weight: 400;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
   white-space: nowrap;
+  text-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.55),
+    0 0 1px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.02em;
 }
 
 .item__description {
   margin: 0.25rem 0 0;
   color: var(--text-dim);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-style: italic;
   line-height: 1.4;
+  opacity: 0.9;
 }
 
 .item__ingredients {
@@ -186,7 +215,7 @@ main {
   color: var(--text-faint);
   font-size: 0.8125rem;
   font-style: italic;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .item__sold-out-badge {
@@ -194,21 +223,22 @@ main {
   margin-top: 0.25rem;
   padding: 0.125rem 0.5rem;
   font-size: 0.6875rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: rgba(255, 112, 112, 0.15);
-  color: var(--error);
-  border-radius: 0.25rem;
+  background: #d32f2f;
+  color: #fff;
+  border-radius: 0.625rem;
+  font-weight: 700;
 }
 
-/* === Style variants === */
+/* Style variants */
 
 .items--cards .item {
-  padding: 1rem 0;
+  padding: 0.875rem 0;
 }
 
 .items--cards .item__name {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
 }
 
 .items--list .item {
@@ -223,12 +253,13 @@ main {
   font-size: 0.9375rem;
 }
 
-/* === Sold-out treatment === */
+/* Sold out */
 
 .item--sold-out .item__name,
 .item--sold-out .item__price {
   text-decoration: line-through;
   color: var(--text-faint);
+  text-shadow: none;
 }
 
 .item--sold-out .item__description,
@@ -236,15 +267,16 @@ main {
   opacity: 0.5;
 }
 
-/* === Footer === */
+/* Footer */
 
 .viewer-footer {
-  margin-top: 2rem;
-  padding-top: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 0.875rem;
   border-top: 1px solid var(--border);
   text-align: center;
   font-size: 0.8125rem;
   color: var(--text-faint);
+  font-family: var(--font-body);
 }
 
 .viewer-error {
@@ -259,9 +291,10 @@ main {
   padding: 2rem;
   text-align: center;
   color: var(--text-dim);
+  font-family: var(--font-body);
 }
 
-/* === Phone breakpoint adjustments === */
+/* Phone breakpoint */
 
 @media (max-width: 767px) {
   main {

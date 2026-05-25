@@ -20,8 +20,11 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   --radius: 0.5rem;
   --radius-sm: 0.3125rem;
-  --font-display: 'Georgia', 'Cambria', serif;
-  --font-body: -apple-system, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Montserrat', -apple-system, system-ui, 'Segoe UI', sans-serif;
+  /* Dishboard brand colors (legacy) */
+  --brand-dish: #ff6b6b;
+  --brand-board: #4ecdc4;
   color-scheme: dark;
 }
 
@@ -92,14 +95,80 @@ code {
 }
 
 .app-brand {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  letter-spacing: 0.04em;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 .app-brand:hover {
   text-decoration: none;
+}
+
+.wordmark {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.wordmark__dish {
+  color: var(--brand-dish);
+}
+
+.wordmark__board {
+  color: var(--brand-board);
+}
+
+.splash-dots {
+  display: inline-flex;
+  gap: 0.4em;
+  margin-left: 0.875rem;
+  align-items: center;
+}
+
+.splash-dots > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--brand-board);
+  animation: splash-dot 1.2s ease-in-out infinite;
+}
+
+.splash-dots > span:nth-child(1) {
+  animation-delay: 0s;
+  background: var(--brand-dish);
+}
+
+.splash-dots > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.splash-dots > span:nth-child(3) {
+  animation-delay: 0.3s;
+  background: var(--brand-dish);
+}
+
+@keyframes splash-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-0.4rem);
+    opacity: 1;
+  }
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  min-height: 3rem;
 }
 
 .nav-toggle {
@@ -489,15 +558,6 @@ textarea.field__input {
   border-radius: var(--radius);
   padding: 2rem;
   box-shadow: var(--shadow-lg);
-}
-
-.login-title {
-  margin: 0 0 0.25rem;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.75rem;
-  color: var(--accent);
-  text-align: center;
 }
 
 .login-sub {
