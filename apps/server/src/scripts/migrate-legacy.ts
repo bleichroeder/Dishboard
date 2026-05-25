@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import {
@@ -6,6 +6,7 @@ import {
   scheduleSchema,
   DEFAULT_TEMPLATE_ID,
   getTemplate,
+  type AssetRecord,
   type Menu,
   type Slot,
   type SectionVariant,
@@ -15,11 +16,18 @@ import {
   type ScheduleRule,
   type Weekday,
 } from '@dishboard/shared';
+import { config } from '../config.js';
 import * as db from '../db.js';
 
 const LEGACY_ROOT = process.argv[2] ?? path.resolve('C:\\Users\\David\\Desktop\\Dishboard');
 const LEGACY_MENUS = path.join(LEGACY_ROOT, 'Menus');
 const LEGACY_SCHEDULE = path.join(LEGACY_ROOT, 'schedule.json');
+const LEGACY_ASSETS = path.join(LEGACY_ROOT, 'Menus', 'Assets', 'Images');
+
+// Per-menu background hint (folder name → legacy image file).
+const LEGACY_BACKGROUND_BY_FOLDER: Record<string, string> = {
+  Breakfast: 'tie-dye.webp',
+};
 
 const TEMPLATE_ID = DEFAULT_TEMPLATE_ID;
 const TEMPLATE = getTemplate(TEMPLATE_ID);
@@ -114,13 +122,77 @@ function convertSection(s: LegacySection, fallbackIdx: number): Slot {
   };
 }
 
+function importLegacyBackground(folderName: string): string | null {
+  const file = LEGACY_BACKGROUND_BY_FOLDER[folderName];
+  if (!file) return null;
+  const src = path.join(LEGACY_ASSETS, file);
+  if (!existsSync(src)) {
+    console.warn(`[migrate] background ${file} not found at ${src}, skipping`);
+    return null;
+  }
+  const ext = path.extname(file).slice(1).toLowerCase();
+  const contentType = mimeForExt(ext);
+  if (!contentType) {
+    console.warn(`[migrate] unsupported background ext ${ext}, skipping ${file}`);
+    return null;
+  }
+  const assetsDir = path.join(config.dataDir, 'assets');
+  if (!existsSync(assetsDir)) mkdirSync(assetsDir, { recursive: true });
+  const id = `asset_${randomBytes(8).toString('hex')}`;
+  const dest = path.join(assetsDir, `${id}.${ext}`);
+  copyFileSync(src, dest);
+  const stat = statSync(dest);
+  const record: AssetRecord = {
+    id,
+    filename: file,
+    contentType,
+    sizeBytes: stat.size,
+    ext,
+    createdAt: Math.floor(Date.now() / 1000),
+  };
+  db.insertAsset(record);
+  console.log(`[migrate] imported background '${file}' → ${id}`);
+  return id;
+}
+
+function mimeForExt(ext: string): string | null {
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'webp':
+      return 'image/webp';
+    case 'svg':
+      return 'image/svg+xml';
+    default:
+      return null;
+  }
+}
+
 function buildMenu(folderName: string, legacy: LegacyMenu): Menu {
   const slots = (legacy.sections ?? []).map((s, i) => convertSection(s, i));
+  const bgAssetId = importLegacyBackground(folderName);
   const candidate: Menu = {
     id: uid('menu'),
     slug: slugify(folderName),
     title: legacy.menuTitle ?? folderName,
     templateId: TEMPLATE_ID,
+    ...(bgAssetId
+      ? {
+          theme: {
+            background: {
+              type: 'image',
+              assetId: bgAssetId,
+              fit: 'cover',
+              overlayOpacity: 0.35,
+            },
+          },
+        }
+      : {}),
     slots,
   };
   return menuSchema.parse(candidate);

@@ -11,6 +11,7 @@ import {
 import { api } from '../api.js';
 import { uid } from '../lib/ids.js';
 import { SlotEditor } from '../components/SlotEditor.js';
+import { ThemeEditor } from '../components/ThemeEditor.js';
 
 export function MenuEditorPage() {
   const { slug = '' } = useParams<{ slug: string }>();
@@ -162,6 +163,8 @@ export function MenuEditorPage() {
           </div>
         ))}
       </section>
+
+      <ThemeEditor menu={menu} update={update} />
 
       <div className="region-grid">
         {template.regions.map((region) => {

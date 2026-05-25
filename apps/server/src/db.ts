@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
-import type { Integrations, Menu, Schedule } from '@dishboard/shared';
+import type { AssetRecord, Integrations, Menu, Schedule } from '@dishboard/shared';
 
 mkdirSync(path.dirname(config.dbPath), { recursive: true });
 
@@ -24,6 +24,15 @@ db.exec(`
     key        TEXT PRIMARY KEY,
     value      TEXT NOT NULL,
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+
+  CREATE TABLE IF NOT EXISTS assets (
+    id            TEXT PRIMARY KEY,
+    filename      TEXT NOT NULL,
+    content_type  TEXT NOT NULL,
+    size_bytes    INTEGER NOT NULL,
+    ext           TEXT NOT NULL,
+    created_at    INTEGER NOT NULL DEFAULT (unixepoch())
   );
 `);
 
@@ -126,4 +135,45 @@ export function listMenuRecords(): Array<{ slug: string; data: string }> {
     slug: string;
     data: string;
   }>;
+}
+
+const assetStmts = {
+  insert: db.prepare(`
+    INSERT INTO assets (id, filename, content_type, size_bytes, ext)
+    VALUES (@id, @filename, @contentType, @sizeBytes, @ext)
+  `),
+  list: db.prepare(`
+    SELECT id, filename, content_type AS contentType, size_bytes AS sizeBytes,
+           ext, created_at AS createdAt
+    FROM assets ORDER BY created_at DESC
+  `),
+  get: db.prepare(`
+    SELECT id, filename, content_type AS contentType, size_bytes AS sizeBytes,
+           ext, created_at AS createdAt
+    FROM assets WHERE id = ?
+  `),
+  delete: db.prepare('DELETE FROM assets WHERE id = ?'),
+};
+
+export function listAssets(): AssetRecord[] {
+  return assetStmts.list.all() as AssetRecord[];
+}
+
+export function getAsset(id: string): AssetRecord | null {
+  return (assetStmts.get.get(id) as AssetRecord | undefined) ?? null;
+}
+
+export function insertAsset(asset: AssetRecord): void {
+  assetStmts.insert.run({
+    id: asset.id,
+    filename: asset.filename,
+    contentType: asset.contentType,
+    sizeBytes: asset.sizeBytes,
+    ext: asset.ext,
+  });
+}
+
+export function deleteAsset(id: string): boolean {
+  const info = assetStmts.delete.run(id);
+  return info.changes > 0;
 }

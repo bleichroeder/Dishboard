@@ -1,4 +1,5 @@
 import type {
+  AssetRecord,
   IntegrationsStatus,
   Menu,
   Schedule,
@@ -84,6 +85,33 @@ export const api = {
     saveSquare: (integration: SquareIntegration) =>
       request<IntegrationsStatus>('PUT', '/api/integrations/square', integration),
     removeSquare: () => request<IntegrationsStatus>('DELETE', '/api/integrations/square'),
+  },
+  assets: {
+    list: () => request<{ assets: AssetRecord[] }>('GET', '/api/assets').then((d) => d.assets),
+    upload: async (file: File): Promise<AssetRecord> => {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/assets', {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      });
+      const text = await r.text();
+      const payload: unknown = text ? JSON.parse(text) : null;
+      if (!r.ok) {
+        const msg =
+          payload &&
+          typeof payload === 'object' &&
+          'error' in payload &&
+          typeof payload.error === 'string'
+            ? payload.error
+            : `upload failed: HTTP ${r.status}`;
+        throw new ApiError(r.status, msg, payload);
+      }
+      return payload as AssetRecord;
+    },
+    remove: (id: string) =>
+      request<{ status: string }>('DELETE', `/api/assets/${encodeURIComponent(id)}`),
   },
   square: {
     search: (q: string) =>

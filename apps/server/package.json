@@ -13,6 +13,7 @@
   "dependencies": {
     "@dishboard/shared": "*",
     "@fastify/cookie": "^11.0.2",
+    "@fastify/multipart": "^9.4.0",
     "@fastify/static": "^8.3.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",

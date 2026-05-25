@@ -84,14 +84,81 @@ export const slotSchema = z.object({
 });
 export type Slot = z.infer<typeof slotSchema>;
 
+// Six fonts curated to cover common restaurant menu looks. Keep the list
+// closed so the viewer can pre-link them in <head> — dynamic font loading
+// is a Phase-N+ concern.
+export const FONT_OPTIONS = [
+  'Montserrat',
+  'Lilita One',
+  'Permanent Marker',
+  'Playfair Display',
+  'Bebas Neue',
+  'Caveat',
+  'Oswald',
+  'Georgia',
+] as const;
+export type FontOption = (typeof FONT_OPTIONS)[number];
+export const fontOptionSchema = z.enum(FONT_OPTIONS);
+
+export const backgroundSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('none') }),
+  z.object({ type: z.literal('color'), color: z.string() }),
+  z.object({
+    type: z.literal('image'),
+    assetId: z.string(),
+    fit: z.enum(['cover', 'contain', 'repeat']).default('cover'),
+    overlayOpacity: z.number().min(0).max(1).default(0),
+  }),
+]);
+export type Background = z.infer<typeof backgroundSchema>;
+
+export const themeSchema = z.object({
+  background: backgroundSchema.optional(),
+  fonts: z
+    .object({
+      display: fontOptionSchema.optional(),
+      body: fontOptionSchema.optional(),
+      price: fontOptionSchema.optional(),
+    })
+    .optional(),
+  colors: z
+    .object({
+      pageText: z.string().optional(),
+      sectionTitle: z.string().optional(),
+      accent: z.string().optional(),
+      price: z.string().optional(),
+      sectionBg: z.string().optional(),
+    })
+    .optional(),
+  sizes: z
+    .object({
+      titleScale: z.number().min(0.5).max(3).optional(),
+      sectionTitleScale: z.number().min(0.5).max(3).optional(),
+      itemScale: z.number().min(0.5).max(3).optional(),
+      priceScale: z.number().min(0.5).max(3).optional(),
+    })
+    .optional(),
+});
+export type Theme = z.infer<typeof themeSchema>;
+
 export const menuSchema = z.object({
   id: z.string(),
   title: z.string(),
   slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, numbers, and dashes'),
   templateId: z.string(),
+  theme: themeSchema.optional(),
   slots: z.array(slotSchema).default([]),
 });
 export type Menu = z.infer<typeof menuSchema>;
+
+export type AssetRecord = {
+  id: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  ext: string;
+  createdAt: number;
+};
 
 export const weekdaySchema = z.enum([
   'monday',
