@@ -52,6 +52,15 @@ Ports:
 - `:5173` — viewer
 - `:5174` — editor
 
+If port 3000 is reserved on your machine (common on Windows with WSL2/Docker port exclusions), run the server on another port and point the dev clients at it:
+
+```bash
+# server
+PORT=3001 npm run dev -w @dishboard/server
+# viewer / editor
+VITE_SERVER_URL=http://localhost:3001 npm run dev -w @dishboard/viewer
+```
+
 ### Generating admin credentials
 
 ```bash

@@ -1,49 +1,97 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { MenuView } from './components/MenuView.js';
+import { usePinnedMenu, useScheduledMenu } from './hooks.js';
 
-type MenuListItem = {
-  id: string;
-  slug: string;
-  title: string;
-  updatedAt: number;
-};
+type Route = { kind: 'schedule' } | { kind: 'pinned'; slug: string };
+
+function parseRoute(pathname: string): Route {
+  const m = /^\/m\/([a-z0-9-]+)\/?$/.exec(pathname);
+  if (m) return { kind: 'pinned', slug: m[1]! };
+  return { kind: 'schedule' };
+}
 
 export function App() {
-  const [menus, setMenus] = useState<MenuListItem[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [route] = useState<Route>(() => parseRoute(window.location.pathname));
+  return route.kind === 'pinned' ? <PinnedView slug={route.slug} /> : <ScheduledView />;
+}
 
-  useEffect(() => {
-    fetch('/api/menus')
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<{ menus: MenuListItem[] }>;
-      })
-      .then((d) => setMenus(d.menus))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
+function ScheduledView() {
+  const { menu, info, error } = useScheduledMenu();
 
+  if (error && !menu) {
+    return (
+      <main>
+        <div className="viewer-error">
+          <strong>Error:</strong> {error}
+        </div>
+      </main>
+    );
+  }
+  if (!menu) {
+    return (
+      <main>
+        <div className="viewer-loading">Loading current menu…</div>
+      </main>
+    );
+  }
   return (
     <main>
-      <h1>Dishboard Viewer</h1>
-      <p>Phase 1 placeholder — slot/template rendering lands in Phase 2.</p>
-      {error && <pre style={{ color: 'crimson' }}>error: {error}</pre>}
-      {menus && menus.length === 0 && (
-        <p>
-          No menus yet. From <code>apps/server</code>, run <code>npm run migrate:legacy</code> to
-          import from the legacy Dishboard.
-        </p>
-      )}
-      {menus && menus.length > 0 && (
-        <ul>
-          {menus.map((m) => (
-            <li key={m.id}>
-              <strong>{m.title}</strong> — <code>/{m.slug}</code>
-              <small style={{ marginLeft: '0.75rem', opacity: 0.7 }}>
-                updated {new Date(m.updatedAt * 1000).toLocaleString()}
-              </small>
-            </li>
-          ))}
-        </ul>
-      )}
+      <MenuView menu={menu} />
+      {info && <FooterStatus info={info} pinned={false} />}
     </main>
+  );
+}
+
+function PinnedView({ slug }: { slug: string }) {
+  const { menu, error } = usePinnedMenu(slug);
+  if (error) {
+    return (
+      <main>
+        <div className="viewer-error">
+          <strong>Menu not found:</strong> <code>/{slug}</code>
+          <div style={{ marginTop: '1rem' }}>
+            <a href="/">View scheduled menu</a>
+          </div>
+        </div>
+      </main>
+    );
+  }
+  if (!menu) {
+    return (
+      <main>
+        <div className="viewer-loading">Loading {slug}…</div>
+      </main>
+    );
+  }
+  return (
+    <main>
+      <MenuView menu={menu} />
+      <FooterStatus pinned={true} slug={slug} />
+    </main>
+  );
+}
+
+function FooterStatus({
+  info,
+  pinned,
+  slug,
+}:
+  | { info?: undefined; pinned: true; slug: string }
+  | { info: import('./api.js').CurrentMenuInfo; pinned: false; slug?: undefined }) {
+  return (
+    <footer className="viewer-footer">
+      {pinned ? (
+        <span>
+          Pinned to <code>/{slug}</code> · <a href="/">follow schedule</a>
+        </span>
+      ) : (
+        <span>
+          {info.day} {info.time}
+          {info.nextChange
+            ? ` · next change ${new Date(info.nextChange).toLocaleTimeString()}`
+            : ''}
+        </span>
+      )}
+    </footer>
   );
 }

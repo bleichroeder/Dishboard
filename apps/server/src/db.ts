@@ -32,6 +32,7 @@ const stmts = {
     'SELECT id, slug, title, updated_at AS updatedAt FROM menus ORDER BY title',
   ),
   getMenuBySlug: db.prepare('SELECT data FROM menus WHERE slug = ?'),
+  getMenuSlugById: db.prepare('SELECT slug FROM menus WHERE id = ?'),
   upsertMenu: db.prepare(`
     INSERT INTO menus (id, slug, title, data, created_at, updated_at)
     VALUES (@id, @slug, @title, @data, unixepoch(), unixepoch())
@@ -65,6 +66,11 @@ export function getMenu(slug: string): Menu | null {
   const row = stmts.getMenuBySlug.get(slug) as { data: string } | undefined;
   if (!row) return null;
   return JSON.parse(row.data) as Menu;
+}
+
+export function getMenuSlugById(id: string): string | null {
+  const row = stmts.getMenuSlugById.get(id) as { slug: string } | undefined;
+  return row?.slug ?? null;
 }
 
 export function saveMenu(menu: Menu): void {
