@@ -17,7 +17,7 @@ export const TEMPLATES: readonly Template[] = [
     breakpoints: {
       kiosk: {
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
-        gridTemplateRows: 'auto auto',
+        gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
         gridTemplateAreas: '"r1 r2 r3" "r4 r5 r6"',
       },
       tablet: {
@@ -46,7 +46,7 @@ export const TEMPLATES: readonly Template[] = [
     breakpoints: {
       kiosk: {
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)',
-        gridTemplateRows: 'auto auto',
+        gridTemplateRows: 'auto minmax(0, 1fr)',
         gridTemplateAreas: '"featured featured featured" "r1 r2 r3"',
       },
       tablet: {
@@ -106,7 +106,7 @@ export const TEMPLATES: readonly Template[] = [
     breakpoints: {
       kiosk: {
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-        gridTemplateRows: 'auto auto',
+        gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
         gridTemplateAreas: '"tl tr" "bl br"',
       },
       tablet: {

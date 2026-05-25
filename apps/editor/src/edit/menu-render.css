@@ -26,6 +26,13 @@
   padding: 2rem 2.5rem;
   position: relative;
   width: 1920px;
+  /* Kiosk-shaped design canvas — fills 1920×1080 so 1fr rows can
+     distribute height evenly. Content taller than 1080 grows the canvas
+     and the KioskFrame's scale shrinks it to fit. */
+  min-height: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   /* transform: scale(...) is applied inline by the React component. */
 }
 
@@ -56,6 +63,9 @@
   display: grid;
   gap: 1.25rem;
   width: 100%;
+  /* Fill remaining canvas height so 1fr rows have space to distribute. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .menu-render__region {
@@ -63,6 +73,9 @@
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
+  min-height: 0;
+  /* Overflowing sections clip within their own cell. */
+  overflow: hidden;
 }
 
 .menu-render__region--empty {
