@@ -1698,22 +1698,34 @@ textarea.field__input {
   min-width: 0;
   min-height: 0;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* The 16:9 kiosk frame. Maintains aspect ratio while fitting inside the
+   canvas area; theme background paints the entire frame so the editor
+   shows exactly what a TV would display. */
 .edit-canvas-fit {
-  flex: 1 1 auto;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  /* aspect-ratio + max-height lets the browser pick the smaller dim */
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  min-height: 0;
+  background-color: #1a1612;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 8px 32px rgba(0, 0, 0, 0.5);
+  border-radius: 0.25rem;
 }
 
 .edit-canvas-scaler {
   /* width set inline (1920), transform: scale() applied inline. Centered
-     in the fit container via flex. Pure scale (no translate) so the
+     in the frame via flex. Pure scale — no translate — so the
      percentage translate doesn't fight with the scale. */
   flex: 0 0 auto;
   transform-origin: center center;

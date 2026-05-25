@@ -31,15 +31,8 @@ export function EditCanvas() {
 
   return (
     <div className="edit-canvas-area">
-      <FitToContainer>
-        <div
-          className="menu-render"
-          style={{
-            ...buildThemeStyle(menu.theme),
-            ...buildBackgroundStyle(menu.theme),
-          }}
-        >
-          <BackgroundOverlay theme={menu.theme} />
+      <KioskFrame theme={menu.theme}>
+        <div className="menu-render" style={buildThemeStyle(menu.theme)}>
           <TemplateStyles template={template} selector=".menu-render__grid" />
           <header className="menu-render__header">
             <EditableText
@@ -55,52 +48,59 @@ export function EditCanvas() {
           </header>
           <RegionGrid menu={menu} template={template} />
         </div>
-      </FitToContainer>
+      </KioskFrame>
     </div>
   );
 }
 
 /**
- * Mirrors the viewer's ScalableMenu: width is fixed at the design
- * canvas size (1920px) and height is content-driven. We compute the
- * largest uniform scale that fits both axes inside the container so
- * the editor canvas renders exactly what the viewer would show.
+ * Renders the menu inside a 16:9 frame that mirrors the kiosk display.
+ * The frame fits within the available canvas area maintaining the
+ * aspect ratio, the theme background paints the whole frame (matching
+ * how the viewer's body::before fills the viewport), and the menu
+ * content is scaled to fit inside the frame.
+ *
+ * Same scaling math as the viewer's ScalableMenu — what you see here
+ * is exactly what the TV will show.
  */
-function FitToContainer({ children }: { children: React.ReactNode }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
+function KioskFrame({
+  theme,
+  children,
+}: {
+  theme: Theme | undefined;
+  children: React.ReactNode;
+}) {
+  const frameRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useLayoutEffect(() => {
-    const wrap = wrapRef.current;
+    const frame = frameRef.current;
     const scaler = scalerRef.current;
-    if (!wrap || !scaler) return;
+    if (!frame || !scaler) return;
     function compute() {
-      if (!wrap || !scaler) return;
-      const containerW = wrap.clientWidth;
-      const containerH = wrap.clientHeight;
-      const naturalW = scaler.offsetWidth;
-      const naturalH = scaler.offsetHeight;
-      if (containerW <= 0 || containerH <= 0 || naturalW <= 0 || naturalH <= 0) return;
-      const next = Math.min(containerW / naturalW, containerH / naturalH) * FIT_MARGIN;
-      setScale(next);
+      if (!frame || !scaler) return;
+      const fw = frame.clientWidth;
+      const fh = frame.clientHeight;
+      const sw = scaler.offsetWidth;
+      const sh = scaler.offsetHeight;
+      if (fw <= 0 || fh <= 0 || sw <= 0 || sh <= 0) return;
+      setScale(Math.min(fw / sw, fh / sh) * FIT_MARGIN);
     }
     compute();
     const obs = new ResizeObserver(compute);
-    obs.observe(wrap);
+    obs.observe(frame);
     obs.observe(scaler);
     return () => obs.disconnect();
   }, []);
 
   return (
-    <div ref={wrapRef} className="edit-canvas-fit">
+    <div className="edit-canvas-fit" ref={frameRef} style={buildBackgroundStyle(theme)}>
+      <BackgroundOverlay theme={theme} />
       <div
         ref={scalerRef}
         className="edit-canvas-scaler"
-        style={{
-          width: DESIGN_WIDTH,
-          transform: `scale(${scale})`,
-        }}
+        style={{ width: DESIGN_WIDTH, transform: `scale(${scale})` }}
       >
         {children}
       </div>
@@ -129,16 +129,13 @@ function buildThemeStyle(theme: Theme | undefined): CSSProperties {
 
 /**
  * Apply the menu's background as an actual CSS background on the
- * .menu-render element so it sits below the fallback bg color rather
- * than fighting it via z-index. Returns the style props to merge.
+ * kiosk frame so it fills the 16:9 area (matching how the viewer's
+ * fixed-position bg fills the viewport).
  */
 function buildBackgroundStyle(theme: Theme | undefined): CSSProperties {
   const bg = theme?.background;
-  if (!bg || bg.type === 'none') return {};
-  if (bg.type === 'color') {
-    return { background: bg.color };
-  }
-  // image
+  if (!bg || bg.type === 'none') return { background: '#1a1612' };
+  if (bg.type === 'color') return { background: bg.color };
   const fit = bg.fit ?? 'cover';
   return {
     backgroundImage: `url('/media/${bg.assetId}')`,

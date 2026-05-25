@@ -18,9 +18,9 @@
   --font-marker: 'Permanent Marker', 'Chalkduster', cursive;
   --font-body: 'Montserrat', -apple-system, system-ui, 'Segoe UI', sans-serif;
 
-  /* Fallback bg color — overridden inline when the menu has a theme
-     background (image or custom color). */
-  background: var(--bg);
+  /* No background here — the KioskFrame paints the theme bg behind us
+     so it fills the whole 16:9 frame, matching the viewer's behavior. */
+  background: transparent;
   color: var(--text);
   font-family: var(--font-body);
   padding: 2rem 2.5rem;
