@@ -52,14 +52,15 @@ Ports:
 - `:5173` — viewer
 - `:5174` — editor
 
-If port 3000 is reserved on your machine (common on Windows with WSL2/Docker port exclusions), run the server on another port and point the dev clients at it:
+If port 3000 is reserved on your machine (common on Windows with WSL2/Docker port exclusions), set `PORT` in `apps/server/.env` and tell the vite proxies in the viewer + editor where to find the server. The vite apps each load their own `.env.local` automatically:
 
 ```bash
-# server
-PORT=3001 npm run dev -w @dishboard/server
-# viewer / editor
-VITE_SERVER_URL=http://localhost:3001 npm run dev -w @dishboard/viewer
+cp apps/viewer/.env.example apps/viewer/.env.local
+cp apps/editor/.env.example apps/editor/.env.local
+# Edit both .env.local files to set VITE_SERVER_URL=http://localhost:3001 (or wherever).
 ```
+
+Both `.env.local` files are gitignored. `process.env.VITE_SERVER_URL` still overrides if you want a one-shot.
 
 ### Generating admin credentials
 
