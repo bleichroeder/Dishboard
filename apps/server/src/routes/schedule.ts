@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { scheduleSchema, type Schedule, type Weekday } from '@dishboard/shared';
 import * as db from '../db.js';
+import { broadcastEvent } from '../events.js';
 import { requireAuth } from './auth.js';
 
 const WEEKDAY_BY_INDEX: readonly Weekday[] = [
@@ -54,6 +55,7 @@ export async function scheduleRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'invalid schedule', issues: parsed.error.issues });
     }
     db.saveSchedule(parsed.data);
+    broadcastEvent('schedule-updated', {});
     return parsed.data;
   });
 

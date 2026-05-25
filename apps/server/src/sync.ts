@@ -1,6 +1,7 @@
 import type { Menu, SquareIntegration } from '@dishboard/shared';
 import { menuSchema } from '@dishboard/shared';
 import * as db from './db.js';
+import { broadcastEvent } from './events.js';
 import { lookupObject, type SquareLookupResult } from './square.js';
 
 export type SyncReport = {
@@ -103,6 +104,7 @@ export async function runSyncOnce(integration: SquareIntegration): Promise<SyncR
       try {
         db.saveMenu(menu);
         menusUpdated += 1;
+        broadcastEvent('menu-updated', { slug: menu.slug, source: 'square-sync' });
       } catch (e) {
         errors.push(`save '${menu.slug}': ${(e as Error).message}`);
       }

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { menuSchema, TEMPLATES, getTemplate, type Menu } from '@dishboard/shared';
 import * as db from '../db.js';
+import { broadcastEvent } from '../events.js';
 import { requireAuth } from './auth.js';
 
 function validateTemplateAndRegions(menu: Menu): string | null {
@@ -37,6 +38,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(409).send({ error: 'slug already exists' });
     }
     db.saveMenu(parsed.data);
+    broadcastEvent('menu-updated', { slug: parsed.data.slug });
     return reply.code(201).send(parsed.data);
   });
 
@@ -54,6 +56,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
       const xref = validateTemplateAndRegions(parsed.data);
       if (xref) return reply.code(400).send({ error: xref });
       db.saveMenu(parsed.data);
+      broadcastEvent('menu-updated', { slug: parsed.data.slug });
       return parsed.data;
     },
   );
@@ -64,6 +67,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const ok = db.deleteMenu(req.params.slug);
       if (!ok) return reply.code(404).send({ error: 'menu not found' });
+      broadcastEvent('menu-deleted', { slug: req.params.slug });
       return { status: 'ok' };
     },
   );

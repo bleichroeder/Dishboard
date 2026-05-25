@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Menu } from '@dishboard/shared';
 import { api, type CurrentMenuInfo } from './api.js';
 
@@ -24,32 +24,32 @@ export function useScheduledMenu(): ScheduledMenuState {
     info: null,
     error: null,
   });
+  const refreshRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let currentSlug: string | null = null;
 
-    async function tick() {
+    async function tick(): Promise<void> {
       try {
         const info = await api.currentMenu();
         if (!alive) return;
         if (!info.menuSlug) throw new Error(`current menu has no slug (id=${info.menuId})`);
-        if (info.menuSlug !== currentSlug) {
-          const menu = await api.getMenu(info.menuSlug);
-          if (!alive) return;
-          currentSlug = info.menuSlug;
-          setState({ menu, info, error: null });
-        } else {
-          setState((s) => ({ ...s, info, error: null }));
-        }
-        timer = setTimeout(tick, delayUntilNextChange(info.nextChange));
+        const menu = await api.getMenu(info.menuSlug);
+        if (!alive) return;
+        setState({ menu, info, error: null });
+        timer = setTimeout(() => void tick(), delayUntilNextChange(info.nextChange));
       } catch (e) {
         if (!alive) return;
         setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) }));
-        timer = setTimeout(tick, RETRY_MS);
+        timer = setTimeout(() => void tick(), RETRY_MS);
       }
     }
+
+    refreshRef.current = () => {
+      if (timer) clearTimeout(timer);
+      void tick();
+    };
 
     void tick();
     return () => {
@@ -58,6 +58,8 @@ export function useScheduledMenu(): ScheduledMenuState {
     };
   }, []);
 
+  useLiveRefresh(() => refreshRef.current());
+
   return state;
 }
 
@@ -65,22 +67,66 @@ export type PinnedMenuState = { menu: Menu | null; error: string | null };
 
 export function usePinnedMenu(slug: string): PinnedMenuState {
   const [state, setState] = useState<PinnedMenuState>({ menu: null, error: null });
+  const refreshRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let alive = true;
     setState({ menu: null, error: null });
-    api
-      .getMenu(slug)
-      .then((menu) => {
-        if (alive) setState({ menu, error: null });
-      })
-      .catch((e: unknown) => {
-        if (alive) setState({ menu: null, error: e instanceof Error ? e.message : String(e) });
-      });
+
+    function load(): void {
+      api
+        .getMenu(slug)
+        .then((menu) => {
+          if (alive) setState({ menu, error: null });
+        })
+        .catch((e: unknown) => {
+          if (alive) setState({ menu: null, error: e instanceof Error ? e.message : String(e) });
+        });
+    }
+
+    refreshRef.current = load;
+    load();
     return () => {
       alive = false;
     };
   }, [slug]);
 
+  useLiveRefresh(() => refreshRef.current());
+
   return state;
+}
+
+/**
+ * Subscribe to the server's SSE event stream and call `onRefresh` whenever
+ * the connection (re)opens, a menu/schedule changes, or the tab becomes
+ * visible again. The callback is held by ref so the stream isn't torn down
+ * on every render.
+ */
+function useLiveRefresh(onRefresh: () => void): void {
+  const cbRef = useRef(onRefresh);
+  cbRef.current = onRefresh;
+
+  useEffect(() => {
+    const trigger = () => cbRef.current();
+    const es = new EventSource('/api/events');
+
+    // EventSource fires 'open' on first connect AND every reconnect — so we
+    // automatically resync after server restarts or network blips.
+    es.addEventListener('open', trigger);
+    es.addEventListener('menu-updated', trigger);
+    es.addEventListener('menu-deleted', trigger);
+    es.addEventListener('schedule-updated', trigger);
+    // The 'hello' event from the server is informational — 'open' already fires
+    // when the connection is up, so we don't bind 'hello' to avoid double-refresh.
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') trigger();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      es.close();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 }
