@@ -141,12 +141,33 @@ export const themeSchema = z.object({
 });
 export type Theme = z.infer<typeof themeSchema>;
 
+export const chefPopSchema = z.object({
+  enabled: z.boolean().default(false),
+  assetIds: z.array(z.string()).default([]),
+  intervalSec: z.number().int().min(5).max(3600).default(25),
+});
+export type ChefPopConfig = z.infer<typeof chefPopSchema>;
+
+export const foodDropSchema = z.object({
+  enabled: z.boolean().default(false),
+  assetIds: z.array(z.string()).default([]),
+  intervalSec: z.number().int().min(5).max(3600).default(60),
+});
+export type FoodDropConfig = z.infer<typeof foodDropSchema>;
+
+export const decorationsSchema = z.object({
+  chefPop: chefPopSchema.optional(),
+  foodDrop: foodDropSchema.optional(),
+});
+export type Decorations = z.infer<typeof decorationsSchema>;
+
 export const menuSchema = z.object({
   id: z.string(),
   title: z.string(),
   slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, numbers, and dashes'),
   templateId: z.string(),
   theme: themeSchema.optional(),
+  decorations: decorationsSchema.optional(),
   slots: z.array(slotSchema).default([]),
 });
 export type Menu = z.infer<typeof menuSchema>;

@@ -335,6 +335,132 @@ main {
   font-family: var(--font-body);
 }
 
+/* === Decorations (chef-pop + food-drop) === */
+
+.chef-pop {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  width: clamp(100px, 12vw, 320px);
+  height: clamp(100px, 12vw, 320px);
+  opacity: 0;
+}
+
+.chef-pop__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.chef-pop__img--left {
+  transform: rotate(90deg);
+}
+
+.chef-pop__img--right {
+  transform: rotate(-90deg) scaleX(-1);
+}
+
+.chef-pop--left {
+  top: var(--chef-top, 50vh);
+  animation: chef-slide-left 2.5s cubic-bezier(0.4, 1.4, 0.6, 1);
+}
+
+.chef-pop--right {
+  top: var(--chef-top, 50vh);
+  animation: chef-slide-right 2.5s cubic-bezier(0.4, 1.4, 0.6, 1);
+}
+
+.chef-pop--bottom {
+  left: var(--chef-left, 50vw);
+  animation: chef-slide-bottom 2.5s cubic-bezier(0.4, 1.4, 0.6, 1);
+}
+
+@keyframes chef-slide-left {
+  0% {
+    left: -140px;
+    opacity: 0;
+  }
+  10% {
+    left: -10px;
+    opacity: 1;
+  }
+  80% {
+    left: -10px;
+    opacity: 1;
+  }
+  100% {
+    left: -140px;
+    opacity: 0;
+  }
+}
+
+@keyframes chef-slide-right {
+  0% {
+    right: -140px;
+    opacity: 0;
+  }
+  10% {
+    right: -10px;
+    opacity: 1;
+  }
+  80% {
+    right: -10px;
+    opacity: 1;
+  }
+  100% {
+    right: -140px;
+    opacity: 0;
+  }
+}
+
+@keyframes chef-slide-bottom {
+  0% {
+    bottom: -140px;
+    opacity: 0;
+  }
+  10% {
+    bottom: -10px;
+    opacity: 1;
+  }
+  80% {
+    bottom: -10px;
+    opacity: 1;
+  }
+  100% {
+    bottom: -140px;
+    opacity: 0;
+  }
+}
+
+.food-drop {
+  position: fixed;
+  top: -120px;
+  z-index: 999;
+  width: clamp(60px, 7vw, 180px);
+  height: clamp(60px, 7vw, 180px);
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: food-drop 4s cubic-bezier(0.4, 0.8, 0.6, 1.2);
+}
+
+.food-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+@keyframes food-drop {
+  0% {
+    top: -120px;
+    transform: translateX(-50%) rotate(0deg);
+  }
+  100% {
+    top: 100vh;
+    transform: translateX(-50%) rotate(720deg);
+  }
+}
+
 /* Phone breakpoint */
 
 @media (max-width: 767px) {

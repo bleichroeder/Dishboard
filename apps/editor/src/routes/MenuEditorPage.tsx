@@ -10,6 +10,7 @@ import {
 } from '@dishboard/shared';
 import { api } from '../api.js';
 import { uid } from '../lib/ids.js';
+import { DecorationsEditor } from '../components/DecorationsEditor.js';
 import { SlotEditor } from '../components/SlotEditor.js';
 import { ThemeEditor } from '../components/ThemeEditor.js';
 
@@ -165,6 +166,7 @@ export function MenuEditorPage() {
       </section>
 
       <ThemeEditor menu={menu} update={update} />
+      <DecorationsEditor menu={menu} update={update} />
 
       <div className="region-grid">
         {template.regions.map((region) => {

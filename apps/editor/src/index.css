@@ -1338,6 +1338,75 @@ textarea.field__input {
   font-size: 0.75rem;
 }
 
+/* === Decorations editor === */
+
+.decoration-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.decoration-sub__desc {
+  margin: 0;
+}
+
+.decoration-sub__assets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.decoration-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.decoration-thumb {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-input);
+}
+
+.decoration-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.decoration-thumb__remove {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.decoration-thumb__remove:hover {
+  background: var(--danger);
+}
+
+.decoration-sub__interval {
+  align-self: flex-start;
+}
+
 /* === Mobile === */
 
 @media (max-width: 720px) {

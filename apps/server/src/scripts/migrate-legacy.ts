@@ -22,11 +22,23 @@ import * as db from '../db.js';
 const LEGACY_ROOT = process.argv[2] ?? path.resolve('C:\\Users\\David\\Desktop\\Dishboard');
 const LEGACY_MENUS = path.join(LEGACY_ROOT, 'Menus');
 const LEGACY_SCHEDULE = path.join(LEGACY_ROOT, 'schedule.json');
-const LEGACY_ASSETS = path.join(LEGACY_ROOT, 'Menus', 'Assets', 'Images');
+const LEGACY_ASSETS_IMAGES = path.join(LEGACY_ROOT, 'Menus', 'Assets', 'Images');
+const LEGACY_ASSETS_SVGS = path.join(LEGACY_ROOT, 'Menus', 'Assets', 'SVGs');
 
-// Per-menu background hint (folder name → legacy image file).
+// Per-menu background hint (folder name → legacy image file under Images/).
 const LEGACY_BACKGROUND_BY_FOLDER: Record<string, string> = {
   Breakfast: 'tie-dye.webp',
+};
+
+// Per-menu decoration assets. Chef-pop = images, food-drop = SVGs.
+const LEGACY_DECORATIONS_BY_FOLDER: Record<
+  string,
+  { chefPopImages?: string[]; foodDropSvgs?: string[] }
+> = {
+  Breakfast: {
+    chefPopImages: ['Chef.png'],
+    foodDropSvgs: ['egg.svg', 'fried-egg.svg', 'bagel.svg'],
+  },
 };
 
 const TEMPLATE_ID = DEFAULT_TEMPLATE_ID;
@@ -122,18 +134,16 @@ function convertSection(s: LegacySection, fallbackIdx: number): Slot {
   };
 }
 
-function importLegacyBackground(folderName: string): string | null {
-  const file = LEGACY_BACKGROUND_BY_FOLDER[folderName];
-  if (!file) return null;
-  const src = path.join(LEGACY_ASSETS, file);
+function importLegacyAsset(srcDir: string, file: string): string | null {
+  const src = path.join(srcDir, file);
   if (!existsSync(src)) {
-    console.warn(`[migrate] background ${file} not found at ${src}, skipping`);
+    console.warn(`[migrate] asset ${file} not found at ${src}, skipping`);
     return null;
   }
   const ext = path.extname(file).slice(1).toLowerCase();
   const contentType = mimeForExt(ext);
   if (!contentType) {
-    console.warn(`[migrate] unsupported background ext ${ext}, skipping ${file}`);
+    console.warn(`[migrate] unsupported ext ${ext}, skipping ${file}`);
     return null;
   }
   const assetsDir = path.join(config.dataDir, 'assets');
@@ -151,8 +161,40 @@ function importLegacyBackground(folderName: string): string | null {
     createdAt: Math.floor(Date.now() / 1000),
   };
   db.insertAsset(record);
-  console.log(`[migrate] imported background '${file}' → ${id}`);
   return id;
+}
+
+function importLegacyBackground(folderName: string): string | null {
+  const file = LEGACY_BACKGROUND_BY_FOLDER[folderName];
+  if (!file) return null;
+  const id = importLegacyAsset(LEGACY_ASSETS_IMAGES, file);
+  if (id) console.log(`[migrate] imported background '${file}' → ${id}`);
+  return id;
+}
+
+function importLegacyDecorations(folderName: string): {
+  chefPopAssetIds: string[];
+  foodDropAssetIds: string[];
+} {
+  const cfg = LEGACY_DECORATIONS_BY_FOLDER[folderName];
+  if (!cfg) return { chefPopAssetIds: [], foodDropAssetIds: [] };
+  const chefPopAssetIds: string[] = [];
+  for (const file of cfg.chefPopImages ?? []) {
+    const id = importLegacyAsset(LEGACY_ASSETS_IMAGES, file);
+    if (id) {
+      chefPopAssetIds.push(id);
+      console.log(`[migrate] imported chef-pop '${file}' → ${id}`);
+    }
+  }
+  const foodDropAssetIds: string[] = [];
+  for (const file of cfg.foodDropSvgs ?? []) {
+    const id = importLegacyAsset(LEGACY_ASSETS_SVGS, file);
+    if (id) {
+      foodDropAssetIds.push(id);
+      console.log(`[migrate] imported food-drop '${file}' → ${id}`);
+    }
+  }
+  return { chefPopAssetIds, foodDropAssetIds };
 }
 
 function mimeForExt(ext: string): string | null {
@@ -176,6 +218,7 @@ function mimeForExt(ext: string): string | null {
 function buildMenu(folderName: string, legacy: LegacyMenu): Menu {
   const slots = (legacy.sections ?? []).map((s, i) => convertSection(s, i));
   const bgAssetId = importLegacyBackground(folderName);
+  const { chefPopAssetIds, foodDropAssetIds } = importLegacyDecorations(folderName);
   const candidate: Menu = {
     id: uid('menu'),
     slug: slugify(folderName),
@@ -190,6 +233,30 @@ function buildMenu(folderName: string, legacy: LegacyMenu): Menu {
               fit: 'cover',
               overlayOpacity: 0.35,
             },
+          },
+        }
+      : {}),
+    ...(chefPopAssetIds.length > 0 || foodDropAssetIds.length > 0
+      ? {
+          decorations: {
+            ...(chefPopAssetIds.length > 0
+              ? {
+                  chefPop: {
+                    enabled: true,
+                    assetIds: chefPopAssetIds,
+                    intervalSec: 25,
+                  },
+                }
+              : {}),
+            ...(foodDropAssetIds.length > 0
+              ? {
+                  foodDrop: {
+                    enabled: true,
+                    assetIds: foodDropAssetIds,
+                    intervalSec: 60,
+                  },
+                }
+              : {}),
           },
         }
       : {}),

@@ -1,6 +1,7 @@
 import { useId, type CSSProperties } from 'react';
 import type { Menu, Slot as SlotType, Theme } from '@dishboard/shared';
 import { getTemplate } from '@dishboard/shared';
+import { Decorations } from './Decorations.js';
 import { Slot } from './Slot.js';
 import { TemplateStyles } from './TemplateStyles.js';
 
@@ -30,6 +31,7 @@ export function MenuView({ menu }: { menu: Menu }) {
   return (
     <div className="menu-page" style={themeStyle}>
       <BackgroundLayer theme={menu.theme} />
+      <Decorations decorations={menu.decorations} />
       <TemplateStyles template={template} selector={`.${gridClass}`} />
       <header className="menu-header">
         <h1>{menu.title}</h1>
