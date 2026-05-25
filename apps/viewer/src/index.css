@@ -94,26 +94,28 @@ main {
   display: contents;
 }
 
-/* === Scalable canvas: menu content renders at a fixed 1920×1080 design
-   size and the parent stage scales it to fit. Kiosk TV scale=1; smaller
-   windows or the preview modal scale down. === */
+/* === Scalable canvas: legacy approach. The canvas has fixed design
+   WIDTH but content-driven HEIGHT, then ScalableMenu computes a uniform
+   scale transform that fits the whole canvas into the stage. Dense menus
+   render taller and scale down more; sparse menus scale up to fill. === */
 
 .menu-stage {
   flex: 1;
   position: relative;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
 }
 
 .menu-canvas {
-  flex: 0 0 auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   transform-origin: center center;
   display: flex;
   flex-direction: column;
-  padding: 2.5rem 3rem;
-  gap: 1rem;
+  padding: 2rem 2.5rem;
+  gap: 0.75rem;
+  /* width set inline (1920px), height is content-driven */
 }
 
 /* === Menu header + grid (live inside the canvas) === */
@@ -139,8 +141,6 @@ main {
   display: grid;
   gap: 1.25rem;
   width: 100%;
-  flex: 1;
-  min-height: 0;
 }
 
 .menu-region {
@@ -148,10 +148,9 @@ main {
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
-  min-height: 0;
-  /* If a section is taller than its grid cell, clip rather than push the
-     row below — keeps the bottom row visible. */
-  overflow: hidden;
+  /* Sections size to content; rows size to the tallest section in them.
+     ScalableMenu scales the whole canvas to fit the stage, so nothing
+     gets clipped on overflow. */
 }
 
 .menu-region--empty {
@@ -166,17 +165,13 @@ main {
   box-shadow: var(--shadow);
   position: relative;
   min-width: 0;
-  min-height: 0;
   backdrop-filter: blur(2px);
-  display: flex;
-  flex-direction: column;
 }
 
 .section__header {
   margin-bottom: 0.625rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px dashed rgba(255, 251, 230, 0.35);
-  flex: 0 0 auto;
 }
 
 .section__title {
@@ -231,8 +226,6 @@ main {
   list-style: none;
   margin: 0;
   padding: 0;
-  min-height: 0;
-  flex: 1 1 auto;
 }
 
 .item {
