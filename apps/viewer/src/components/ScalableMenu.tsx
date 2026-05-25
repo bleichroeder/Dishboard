@@ -1,46 +1,55 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 const DESIGN_WIDTH = 1920;
-const DESIGN_HEIGHT = 1080;
+const FIT_MARGIN = 0.96;
 
 /**
- * Render `children` at a fixed `DESIGN_WIDTH × DESIGN_HEIGHT` canvas and
- * apply a CSS scale transform so the canvas fits whatever container the
- * stage occupies. The kiosk TV renders at scale=1 (native crisp); a
- * smaller preview iframe or browser window scales down — text, gaps,
- * padding, everything shrinks together. This is what the legacy viewer
- * approximated with vw-based sizes, but a true transform makes the
- * scaling uniform.
+ * Legacy Dishboard scaling technique: canvas has a fixed design WIDTH
+ * (1920px) but content-driven HEIGHT, then a uniform scale transform
+ * brings the whole canvas inside the stage. Dense menus render tall and
+ * scale down; sparse menus stay big.
+ *
+ * The stage flex-centers the canvas; the canvas uses pure scale (no
+ * translate-percent) since combining `translate(-50%, -50%)` with
+ * `scale()` misaligns the result — the percentage translate is
+ * calculated from the unscaled layout box and ends up offset.
  */
 export function ScalableMenu({ children }: { children: ReactNode }) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useLayoutEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
+    const stage = stageRef.current;
+    const canvas = canvasRef.current;
+    if (!stage || !canvas) return;
 
     function update() {
-      if (!el) return;
-      const w = el.clientWidth;
-      const h = el.clientHeight;
-      if (w <= 0 || h <= 0) return;
-      setScale(Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT));
+      if (!stage || !canvas) return;
+      // offsetWidth/Height ignore transforms — give the natural layout size.
+      const stageW = stage.clientWidth;
+      const stageH = stage.clientHeight;
+      const canvasW = canvas.offsetWidth;
+      const canvasH = canvas.offsetHeight;
+      if (canvasW <= 0 || canvasH <= 0 || stageW <= 0 || stageH <= 0) return;
+      const next = Math.min(stageW / canvasW, stageH / canvasH) * FIT_MARGIN;
+      setScale(next);
     }
 
     update();
     const obs = new ResizeObserver(update);
-    obs.observe(el);
+    obs.observe(stage);
+    obs.observe(canvas);
     return () => obs.disconnect();
   }, []);
 
   return (
     <div ref={stageRef} className="menu-stage">
       <div
+        ref={canvasRef}
         className="menu-canvas"
         style={{
           width: DESIGN_WIDTH,
-          height: DESIGN_HEIGHT,
           transform: `scale(${scale})`,
         }}
       >
