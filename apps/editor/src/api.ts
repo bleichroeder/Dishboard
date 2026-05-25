@@ -75,6 +75,8 @@ export const api = {
     create: (menu: Menu) => request<Menu>('POST', '/api/menus', menu),
     update: (slug: string, menu: Menu) => request<Menu>('PUT', `/api/menus/${slug}`, menu),
     remove: (slug: string) => request<{ status: string }>('DELETE', `/api/menus/${slug}`),
+    /** Universal import — accepts current Menu or legacy menu.json shape. */
+    importJson: (json: unknown) => request<Menu>('POST', '/api/menus/import', json),
   },
   schedule: {
     get: () => request<Schedule>('GET', '/api/schedule'),

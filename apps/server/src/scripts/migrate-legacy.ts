@@ -2,22 +2,17 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSyn
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import {
-  menuSchema,
-  scheduleSchema,
   DEFAULT_TEMPLATE_ID,
-  getTemplate,
+  scheduleSchema,
   type AssetRecord,
   type Menu,
-  type Slot,
-  type SectionVariant,
-  type Item,
-  type Addon,
   type Schedule,
   type ScheduleRule,
   type Weekday,
 } from '@dishboard/shared';
 import { config } from '../config.js';
 import * as db from '../db.js';
+import { convertLegacyMenu, slugify, type LegacyMenu } from '../legacy.js';
 
 const LEGACY_ROOT = process.argv[2] ?? path.resolve('C:\\Users\\David\\Desktop\\Dishboard');
 const LEGACY_MENUS = path.join(LEGACY_ROOT, 'Menus');
@@ -40,99 +35,6 @@ const LEGACY_DECORATIONS_BY_FOLDER: Record<
     foodDropSvgs: ['egg.svg', 'fried-egg.svg', 'bagel.svg'],
   },
 };
-
-const TEMPLATE_ID = DEFAULT_TEMPLATE_ID;
-const TEMPLATE = getTemplate(TEMPLATE_ID);
-if (!TEMPLATE) throw new Error(`default template '${TEMPLATE_ID}' not found`);
-const REGION_IDS = TEMPLATE.regions.map((r) => r.id);
-
-function uid(prefix: string): string {
-  return `${prefix}_${randomBytes(4).toString('hex')}`;
-}
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-type LegacySquare = { item_id?: string; track_price?: boolean; track_availability?: boolean };
-type LegacyAddon = { name?: string; price?: string; square?: LegacySquare };
-type LegacyItem = {
-  name?: string;
-  desc?: string;
-  ingredients?: string[];
-  price?: string;
-  addons?: LegacyAddon[];
-  hidden?: boolean;
-  soldOut?: boolean;
-  square?: LegacySquare;
-};
-type LegacySection = {
-  title?: string;
-  description?: string;
-  gridPosition?: number;
-  items?: LegacyItem[];
-};
-type LegacyMenu = {
-  menuTitle?: string;
-  sections?: LegacySection[];
-};
-
-function convertSquare(sq: LegacySquare | undefined) {
-  if (!sq?.item_id) return undefined;
-  return {
-    itemId: sq.item_id,
-    trackPrice: sq.track_price ?? false,
-    trackAvailability: sq.track_availability ?? false,
-  };
-}
-
-function convertAddon(a: LegacyAddon): Addon {
-  return {
-    id: uid('addon'),
-    name: a.name ?? 'Untitled add-on',
-    ...(a.price !== undefined ? { price: a.price } : {}),
-    ...(convertSquare(a.square) ? { squareRef: convertSquare(a.square)! } : {}),
-  };
-}
-
-function convertItem(it: LegacyItem): Item {
-  return {
-    id: uid('item'),
-    name: it.name ?? 'Untitled item',
-    ...(it.desc ? { description: it.desc } : {}),
-    ingredients: it.ingredients ?? [],
-    ...(it.price !== undefined ? { price: it.price } : {}),
-    addons: (it.addons ?? []).map(convertAddon),
-    hidden: it.hidden ?? false,
-    soldOut: it.soldOut ?? false,
-    ...(convertSquare(it.square) ? { squareRef: convertSquare(it.square)! } : {}),
-  };
-}
-
-function convertSection(s: LegacySection, fallbackIdx: number): Slot {
-  // gridPosition is 1-based in legacy. Map to region by index, capping at the
-  // template's region count. Sections beyond that get assigned to later regions
-  // (which classic-3col doesn't have, so they get dropped into the last region).
-  const oneBased = s.gridPosition ?? fallbackIdx + 1;
-  const regionIdx = Math.min(Math.max(oneBased - 1, 0), REGION_IDS.length - 1);
-  const regionId = REGION_IDS[regionIdx]!;
-  const variant: SectionVariant = {
-    id: uid('variant'),
-    title: s.title ?? 'Untitled',
-    ...(s.description ? { description: s.description } : {}),
-    style: 'cards',
-    items: (s.items ?? []).map(convertItem),
-  };
-  return {
-    id: uid('slot'),
-    regionId,
-    order: 0,
-    variants: [variant],
-  };
-}
 
 function importLegacyAsset(srcDir: string, file: string): string | null {
   const src = path.join(srcDir, file);
@@ -164,39 +66,6 @@ function importLegacyAsset(srcDir: string, file: string): string | null {
   return id;
 }
 
-function importLegacyBackground(folderName: string): string | null {
-  const file = LEGACY_BACKGROUND_BY_FOLDER[folderName];
-  if (!file) return null;
-  const id = importLegacyAsset(LEGACY_ASSETS_IMAGES, file);
-  if (id) console.log(`[migrate] imported background '${file}' → ${id}`);
-  return id;
-}
-
-function importLegacyDecorations(folderName: string): {
-  chefPopAssetIds: string[];
-  foodDropAssetIds: string[];
-} {
-  const cfg = LEGACY_DECORATIONS_BY_FOLDER[folderName];
-  if (!cfg) return { chefPopAssetIds: [], foodDropAssetIds: [] };
-  const chefPopAssetIds: string[] = [];
-  for (const file of cfg.chefPopImages ?? []) {
-    const id = importLegacyAsset(LEGACY_ASSETS_IMAGES, file);
-    if (id) {
-      chefPopAssetIds.push(id);
-      console.log(`[migrate] imported chef-pop '${file}' → ${id}`);
-    }
-  }
-  const foodDropAssetIds: string[] = [];
-  for (const file of cfg.foodDropSvgs ?? []) {
-    const id = importLegacyAsset(LEGACY_ASSETS_SVGS, file);
-    if (id) {
-      foodDropAssetIds.push(id);
-      console.log(`[migrate] imported food-drop '${file}' → ${id}`);
-    }
-  }
-  return { chefPopAssetIds, foodDropAssetIds };
-}
-
 function mimeForExt(ext: string): string | null {
   switch (ext) {
     case 'jpg':
@@ -216,14 +85,40 @@ function mimeForExt(ext: string): string | null {
 }
 
 function buildMenu(folderName: string, legacy: LegacyMenu): Menu {
-  const slots = (legacy.sections ?? []).map((s, i) => convertSection(s, i));
-  const bgAssetId = importLegacyBackground(folderName);
-  const { chefPopAssetIds, foodDropAssetIds } = importLegacyDecorations(folderName);
-  const candidate: Menu = {
-    id: uid('menu'),
+  // Pure conversion (sections → slots → items → addons).
+  const base = convertLegacyMenu(legacy, {
+    templateId: DEFAULT_TEMPLATE_ID,
     slug: slugify(folderName),
     title: legacy.menuTitle ?? folderName,
-    templateId: TEMPLATE_ID,
+  });
+
+  // Layer on legacy assets we can read from disk during this script run.
+  const bgFile = LEGACY_BACKGROUND_BY_FOLDER[folderName];
+  const bgAssetId = bgFile ? importLegacyAsset(LEGACY_ASSETS_IMAGES, bgFile) : null;
+  if (bgAssetId && bgFile) console.log(`[migrate] imported background '${bgFile}' → ${bgAssetId}`);
+
+  const decCfg = LEGACY_DECORATIONS_BY_FOLDER[folderName];
+  const chefPopAssetIds: string[] = [];
+  const foodDropAssetIds: string[] = [];
+  if (decCfg) {
+    for (const file of decCfg.chefPopImages ?? []) {
+      const id = importLegacyAsset(LEGACY_ASSETS_IMAGES, file);
+      if (id) {
+        chefPopAssetIds.push(id);
+        console.log(`[migrate] imported chef-pop '${file}' → ${id}`);
+      }
+    }
+    for (const file of decCfg.foodDropSvgs ?? []) {
+      const id = importLegacyAsset(LEGACY_ASSETS_SVGS, file);
+      if (id) {
+        foodDropAssetIds.push(id);
+        console.log(`[migrate] imported food-drop '${file}' → ${id}`);
+      }
+    }
+  }
+
+  return {
+    ...base,
     ...(bgAssetId
       ? {
           theme: {
@@ -260,9 +155,7 @@ function buildMenu(folderName: string, legacy: LegacyMenu): Menu {
           },
         }
       : {}),
-    slots,
   };
-  return menuSchema.parse(candidate);
 }
 
 function readJSON<T>(p: string): T {
@@ -331,7 +224,7 @@ function migrateSchedule(slugToId: Map<string, string>): void {
     }
     return [
       {
-        id: uid('rule'),
+        id: `rule_${randomBytes(4).toString('hex')}`,
         menuId,
         startTime: r.start_time,
         endTime: r.end_time,

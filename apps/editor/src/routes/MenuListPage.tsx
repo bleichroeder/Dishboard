@@ -1,13 +1,19 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DEFAULT_TEMPLATE_ID, TEMPLATES, type Menu } from '@dishboard/shared';
 import { api, type MenuListItem } from '../api.js';
+import { KebabMenu } from '../components/KebabMenu.js';
+import { PreviewModal } from '../components/PreviewModal.js';
 import { slugify, uid } from '../lib/ids.js';
 
 export function MenuListPage() {
+  const navigate = useNavigate();
   const [menus, setMenus] = useState<MenuListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [previewSlug, setPreviewSlug] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => {
     api.menus
@@ -29,18 +35,90 @@ export function MenuListPage() {
     }
   }
 
+  async function onClone(slug: string) {
+    setError(null);
+    try {
+      const source = await api.menus.get(slug);
+      // Regenerate ids so React keys + DB ids don't collide. Server will reject
+      // duplicate slugs, so derive a fresh one client-side.
+      const cloned: Menu = {
+        ...source,
+        id: uid('menu'),
+        slug: nextCopySlug(source.slug, menus ?? []),
+        title: `${source.title} (copy)`,
+        slots: source.slots.map((s) => ({
+          ...s,
+          id: uid('slot'),
+          variants: s.variants.map((v) => ({
+            ...v,
+            id: uid('variant'),
+            items: v.items.map((i) => ({
+              ...i,
+              id: uid('item'),
+              addons: i.addons.map((a) => ({ ...a, id: uid('addon') })),
+            })),
+          })),
+        })),
+      };
+      const saved = await api.menus.create(cloned);
+      refresh();
+      navigate(`/menus/${saved.slug}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Clone failed');
+    }
+  }
+
+  function onImportClick() {
+    importInputRef.current?.click();
+  }
+
+  async function onImportChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    setInfo(null);
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text) as unknown;
+      const saved = await api.menus.importJson(json);
+      setInfo(`Imported "${saved.title}" as /${saved.slug}.`);
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Import failed');
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-header">
         <h1>Menus</h1>
-        {!showCreate && (
-          <button type="button" className="btn btn--primary" onClick={() => setShowCreate(true)}>
-            New menu
+        <div className="page-header__actions">
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={onImportClick}
+            title="Accepts legacy menu.json or current Menu JSON"
+          >
+            Import JSON
           </button>
-        )}
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={onImportChange}
+          />
+          {!showCreate && (
+            <button type="button" className="btn btn--primary" onClick={() => setShowCreate(true)}>
+              New menu
+            </button>
+          )}
+        </div>
       </header>
 
       {error && <div className="banner banner--error">{error}</div>}
+      {info && <div className="banner banner--info">{info}</div>}
 
       {showCreate && (
         <CreateMenuForm
@@ -61,31 +139,56 @@ export function MenuListPage() {
       {menus && menus.length > 0 && (
         <ul className="card-list">
           {menus.map((m) => (
-            <li key={m.id} className="card menu-card">
+            <li
+              key={m.id}
+              className="card menu-card menu-card--clickable"
+              onClick={() => navigate(`/menus/${m.slug}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/menus/${m.slug}`);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
               <div className="card__main">
                 <h3 className="card__title">{m.title}</h3>
                 <div className="card__meta">
                   <code>/{m.slug}</code>
                 </div>
               </div>
-              <div className="card__actions">
-                <Link to={`/menus/${m.slug}`} className="btn btn--secondary">
-                  Edit
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => onDelete(m.slug, m.title)}
-                >
-                  Delete
-                </button>
-              </div>
+              <KebabMenu
+                ariaLabel={`Actions for ${m.title}`}
+                actions={[
+                  { label: 'Edit', onSelect: () => navigate(`/menus/${m.slug}`) },
+                  { label: 'Preview', onSelect: () => setPreviewSlug(m.slug) },
+                  { label: 'Clone', onSelect: () => void onClone(m.slug) },
+                  {
+                    label: 'Delete',
+                    destructive: true,
+                    onSelect: () => void onDelete(m.slug, m.title),
+                  },
+                ]}
+              />
             </li>
           ))}
         </ul>
       )}
+
+      {previewSlug && <PreviewModal slug={previewSlug} onClose={() => setPreviewSlug(null)} />}
     </div>
   );
+}
+
+function nextCopySlug(base: string, existing: MenuListItem[]): string {
+  const taken = new Set(existing.map((m) => m.slug));
+  if (!taken.has(`${base}-copy`)) return `${base}-copy`;
+  for (let i = 2; i < 999; i++) {
+    const candidate = `${base}-copy-${i}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base}-copy-${Date.now()}`;
 }
 
 function CreateMenuForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
