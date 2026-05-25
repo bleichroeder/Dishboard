@@ -16,6 +16,7 @@ export function SlotEditor({
   update: UpdateFn;
 }) {
   const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   const safeIdx = Math.min(activeVariantIdx, slot.variants.length - 1);
   const variant = slot.variants[safeIdx]!;
 
@@ -45,7 +46,8 @@ export function SlotEditor({
       };
       s.variants.push(v);
     });
-    setActiveVariantIdx(slot.variants.length); // will become the new last index
+    setActiveVariantIdx(slot.variants.length);
+    setExpanded(true);
   }
 
   function deleteVariant(variantId: string) {
@@ -62,123 +64,161 @@ export function SlotEditor({
     setActiveVariantIdx(0);
   }
 
+  const totalItems = slot.variants.reduce((n, v) => n + v.items.length, 0);
   const rotationOn = !!slot.rotation;
+  const showRotation = slot.variants.length > 1;
+  const titleForSummary = variant.title || 'Untitled section';
 
   return (
-    <div className="slot-editor">
-      <div className="slot-editor__head">
-        <div className="slot-editor__variant-tabs" role="tablist">
-          {slot.variants.map((v, i) => (
-            <button
-              key={v.id}
-              type="button"
-              role="tab"
-              aria-selected={i === safeIdx}
-              className={`variant-tab${i === safeIdx ? ' variant-tab--active' : ''}`}
-              onClick={() => setActiveVariantIdx(i)}
-              title={v.title}
-            >
-              {v.title || `Variant ${i + 1}`}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="variant-tab variant-tab--add"
-            onClick={addVariant}
-            title="Add variant"
-          >
-            +
-          </button>
-        </div>
-        <div className="slot-editor__head-actions">
-          <select
-            className="region-select"
-            value={slot.regionId}
-            onChange={(e) =>
-              withSlot((s) => {
-                s.regionId = e.target.value;
-              })
-            }
-            aria-label="Region"
-            title="Move to region"
-          >
-            {template.regions.map((r) => (
-              <option key={r.id} value={r.id}>
-                → {r.label}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="btn btn--danger btn--small" onClick={deleteSlot}>
-            Delete slot
-          </button>
-        </div>
-      </div>
+    <div className="slot-card">
+      <button
+        type="button"
+        className="slot-card__head"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <span className="slot-card__chevron" aria-hidden>
+          {expanded ? '▾' : '▸'}
+        </span>
+        <span className="slot-card__title">{titleForSummary}</span>
+        <span className="slot-card__meta">
+          {slot.variants.length === 1
+            ? `${totalItems} item${totalItems === 1 ? '' : 's'}`
+            : `${slot.variants.length} variants · ${totalItems} item${totalItems === 1 ? '' : 's'}`}
+        </span>
+        {rotationOn && slot.variants.length > 1 && slot.rotation && (
+          <span className="pill pill--info">rotates {slot.rotation.intervalSec}s</span>
+        )}
+      </button>
 
-      <div className="slot-editor__rotation">
-        <label className="rotation-toggle">
-          <input
-            type="checkbox"
-            checked={rotationOn}
-            onChange={(e) =>
-              withSlot((s) => {
-                if (e.target.checked) {
-                  s.rotation = { intervalSec: 30, cycle: 'sequential' };
-                } else {
-                  s.rotation = undefined;
-                }
-              })
-            }
-          />
-          <span>Rotate variants on a timer</span>
-        </label>
-        {slot.rotation && (
-          <div className="rotation-config">
-            <label className="field field--inline">
-              <span className="field__label">Every</span>
-              <input
-                className="field__input field__input--narrow"
-                type="number"
-                min={5}
-                value={slot.rotation.intervalSec}
-                onChange={(e) =>
-                  withSlot((s) => {
-                    if (s.rotation) s.rotation.intervalSec = Math.max(5, Number(e.target.value));
-                  })
-                }
-              />
-              <span className="field__suffix">sec</span>
-            </label>
-            <label className="field field--inline">
-              <span className="field__label">Order</span>
-              <select
-                className="field__input"
-                value={slot.rotation.cycle}
-                onChange={(e) =>
-                  withSlot((s) => {
-                    if (s.rotation) s.rotation.cycle = e.target.value as 'sequential' | 'random';
-                  })
-                }
+      {expanded && (
+        <div className="slot-card__body">
+          <div className="slot-editor__head">
+            {slot.variants.length > 1 && (
+              <div className="slot-editor__variant-tabs" role="tablist">
+                {slot.variants.map((v, i) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === safeIdx}
+                    className={`variant-tab${i === safeIdx ? ' variant-tab--active' : ''}`}
+                    onClick={() => setActiveVariantIdx(i)}
+                    title={v.title}
+                  >
+                    {v.title || `Variant ${i + 1}`}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="variant-tab variant-tab--add"
+                  onClick={addVariant}
+                  title="Add variant"
+                >
+                  +
+                </button>
+              </div>
+            )}
+            {slot.variants.length === 1 && (
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={addVariant}
+                title="Add a second variant to enable rotation"
               >
-                <option value="sequential">Sequential</option>
-                <option value="random">Random</option>
+                + Variant for rotation
+              </button>
+            )}
+            <div className="slot-editor__head-actions">
+              <select
+                className="region-select"
+                value={slot.regionId}
+                onChange={(e) =>
+                  withSlot((s) => {
+                    s.regionId = e.target.value;
+                  })
+                }
+                aria-label="Region"
+                title="Move to region"
+              >
+                {template.regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    → {r.label}
+                  </option>
+                ))}
               </select>
-            </label>
+              <button type="button" className="btn btn--danger btn--small" onClick={deleteSlot}>
+                Delete slot
+              </button>
+            </div>
           </div>
-        )}
-        {slot.variants.length <= 1 && rotationOn && (
-          <div className="hint hint--warn">
-            Rotation is on but the slot only has one variant — add another to see it rotate.
-          </div>
-        )}
-      </div>
 
-      <VariantEditor
-        variant={variant}
-        slotId={slot.id}
-        update={update}
-        canDelete={slot.variants.length > 1}
-        onDelete={() => deleteVariant(variant.id)}
-      />
+          {showRotation && (
+            <div className="slot-editor__rotation">
+              <label className="rotation-toggle">
+                <input
+                  type="checkbox"
+                  checked={rotationOn}
+                  onChange={(e) =>
+                    withSlot((s) => {
+                      if (e.target.checked) {
+                        s.rotation = { intervalSec: 30, cycle: 'sequential' };
+                      } else {
+                        s.rotation = undefined;
+                      }
+                    })
+                  }
+                />
+                <span>Rotate variants on a timer</span>
+              </label>
+              {slot.rotation && (
+                <div className="rotation-config">
+                  <label className="field field--inline">
+                    <span className="field__label">Every</span>
+                    <input
+                      className="field__input field__input--narrow"
+                      type="number"
+                      min={5}
+                      value={slot.rotation.intervalSec}
+                      onChange={(e) =>
+                        withSlot((s) => {
+                          if (s.rotation)
+                            s.rotation.intervalSec = Math.max(5, Number(e.target.value));
+                        })
+                      }
+                    />
+                    <span className="field__suffix">sec</span>
+                  </label>
+                  <label className="field field--inline">
+                    <span className="field__label">Order</span>
+                    <select
+                      className="field__input"
+                      value={slot.rotation.cycle}
+                      onChange={(e) =>
+                        withSlot((s) => {
+                          if (s.rotation)
+                            s.rotation.cycle = e.target.value as 'sequential' | 'random';
+                        })
+                      }
+                    >
+                      <option value="sequential">Sequential</option>
+                      <option value="random">Random</option>
+                    </select>
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+
+          <VariantEditor
+            variant={variant}
+            slotId={slot.id}
+            update={update}
+            canDelete={slot.variants.length > 1}
+            onDelete={() => deleteVariant(variant.id)}
+          />
+        </div>
+      )}
     </div>
   );
 }

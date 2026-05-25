@@ -125,6 +125,15 @@ export function MenuEditorPage() {
         </div>
         <div className="editor-toolbar__actions">
           {savingState === 'saved' && !dirty && <span className="saved-pill">Saved</span>}
+          <a
+            href={`/m/${menu.slug}`}
+            target="_blank"
+            rel="noopener"
+            className="btn btn--secondary"
+            title={dirty ? 'Preview shows the last saved version' : 'Open viewer in a new tab'}
+          >
+            Preview
+          </a>
           <button
             type="button"
             className="btn btn--primary"

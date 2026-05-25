@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': target,
         '/health': target,
+        '/media': target,
       },
     },
   };

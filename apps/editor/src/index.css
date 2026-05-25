@@ -636,22 +636,11 @@ textarea.field__input {
 
 /* === Region grid === */
 
+/* Single column for editing — easier to scan than 2–3 column region grid. */
 .region-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-}
-
-@media (min-width: 900px) {
-  .region-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 1400px) {
-  .region-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
 }
 
 .region-panel {
@@ -689,7 +678,61 @@ textarea.field__input {
   font-size: 0.875rem;
 }
 
-/* === Slot editor === */
+/* === Slot card (collapsed by default) === */
+
+.slot-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.slot-card__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  min-height: 3rem;
+}
+
+.slot-card__head:hover {
+  background: var(--bg);
+}
+
+.slot-card__chevron {
+  color: var(--text-faint);
+  font-size: 0.875rem;
+  flex: 0 0 1rem;
+}
+
+.slot-card__title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.slot-card__meta {
+  color: var(--text-faint);
+  font-size: 0.875rem;
+  margin-left: auto;
+}
+
+.slot-card__body {
+  padding: 0.875rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* === Slot editor (inner controls) === */
 
 .slot-editor {
   background: var(--bg-card);
