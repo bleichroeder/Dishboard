@@ -1694,33 +1694,23 @@ textarea.field__input {
   flex: 1 1 auto;
   overflow: hidden;
   background: #0e0a07;
-  padding: 1rem;
   min-width: 0;
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-/* The 16:9 kiosk frame. Maintains aspect ratio while fitting inside the
-   canvas area; theme background paints the entire frame so the editor
-   shows exactly what a TV would display. */
+/* Fill the entire canvas area; the menu's own 1920×1080 design canvas is
+   scaled to fit. The theme bg paints the whole area so any letterboxing
+   from aspect mismatch reads as "off-screen" rather than wasted space. */
 .edit-canvas-fit {
-  aspect-ratio: 16 / 9;
+  flex: 1 1 auto;
   width: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  /* aspect-ratio + max-height lets the browser pick the smaller dim */
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #1a1612;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 8px 32px rgba(0, 0, 0, 0.5);
-  border-radius: 0.25rem;
 }
 
 .edit-canvas-scaler {
@@ -1734,9 +1724,9 @@ textarea.field__input {
 /* === Side panel === */
 
 .side-panel {
-  flex: 0 0 24rem;
-  max-width: 28rem;
-  min-width: 18rem;
+  flex: 0 0 20rem;
+  max-width: 24rem;
+  min-width: 16rem;
   background: var(--bg-elevated);
   border-left: 1px solid var(--border);
   display: flex;

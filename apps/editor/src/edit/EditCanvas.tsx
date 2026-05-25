@@ -14,7 +14,11 @@ import { useEditor } from './EditorContext.js';
 import { TemplateStyles } from './TemplateStyles.js';
 
 const DESIGN_WIDTH = 1920;
-const FIT_MARGIN = 0.96;
+// No margin in the editor — use every pixel of the canvas area. The viewer
+// has its own small margin for breathing room on the TV; in the editor the
+// chrome (toolbar + side panel) already separates the menu from the
+// browser window edges.
+const FIT_MARGIN = 1.0;
 
 export function EditCanvas() {
   const { menu, update } = useEditor();
