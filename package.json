@@ -12,12 +12,16 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "dev": "npm run dev --workspaces --if-present"
+    "dev": "concurrently -k -n server,viewer,editor -c blue,green,yellow \"npm:dev:server\" \"npm:dev:viewer\" \"npm:dev:editor\"",
+    "dev:server": "npm run dev -w @dishboard/server",
+    "dev:viewer": "npm run dev -w @dishboard/viewer",
+    "dev:editor": "npm run dev -w @dishboard/editor"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
   }
