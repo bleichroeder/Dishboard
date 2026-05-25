@@ -7,13 +7,20 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migrate:legacy": "tsx src/scripts/migrate-legacy.ts"
   },
   "dependencies": {
     "@dishboard/shared": "*",
+    "@fastify/cookie": "^11.0.2",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.6.1",
     "fastify": "^5.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.7.5",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"

@@ -2,8 +2,8 @@
 node_modules/
 
 # build output
-dist/
-build/
+**/dist/
+**/build/
 .vite/
 *.tsbuildinfo
 

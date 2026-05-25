@@ -46,33 +46,49 @@ export const rotationSchema = z.object({
 });
 export type Rotation = z.infer<typeof rotationSchema>;
 
-export const gridPositionSchema = z.object({
-  column: z.number().int().positive(),
-  row: z.number().int().positive(),
-  columnSpan: z.number().int().positive().default(1),
-  rowSpan: z.number().int().positive().default(1),
+export const breakpointLayoutSchema = z.object({
+  gridTemplateColumns: z.string(),
+  gridTemplateRows: z.string(),
+  gridTemplateAreas: z.string(),
 });
-export type GridPosition = z.infer<typeof gridPositionSchema>;
+export type BreakpointLayout = z.infer<typeof breakpointLayoutSchema>;
+
+export const regionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+export type Region = z.infer<typeof regionSchema>;
+
+export const breakpointSchema = z.enum(['kiosk', 'tablet', 'phone']);
+export type Breakpoint = z.infer<typeof breakpointSchema>;
+
+export const templateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  regions: z.array(regionSchema).min(1),
+  breakpoints: z.object({
+    kiosk: breakpointLayoutSchema,
+    tablet: breakpointLayoutSchema,
+    phone: breakpointLayoutSchema,
+  }),
+});
+export type Template = z.infer<typeof templateSchema>;
 
 export const slotSchema = z.object({
   id: z.string(),
-  position: gridPositionSchema,
+  regionId: z.string(),
+  order: z.number().int().nonnegative().default(0),
   rotation: rotationSchema.optional(),
   variants: z.array(sectionVariantSchema).min(1),
 });
 export type Slot = z.infer<typeof slotSchema>;
 
-export const gridLayoutSchema = z.object({
-  columns: z.number().int().positive(),
-  rows: z.number().int().positive(),
-});
-export type GridLayout = z.infer<typeof gridLayoutSchema>;
-
 export const menuSchema = z.object({
   id: z.string(),
   title: z.string(),
   slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters, numbers, and dashes'),
-  layout: gridLayoutSchema,
+  templateId: z.string(),
   slots: z.array(slotSchema).default([]),
 });
 export type Menu = z.infer<typeof menuSchema>;
