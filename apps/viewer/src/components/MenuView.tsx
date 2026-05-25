@@ -2,6 +2,7 @@ import { useId, type CSSProperties } from 'react';
 import type { Menu, Slot as SlotType, Theme } from '@dishboard/shared';
 import { getTemplate } from '@dishboard/shared';
 import { Decorations } from './Decorations.js';
+import { ScalableMenu } from './ScalableMenu.js';
 import { Slot } from './Slot.js';
 import { TemplateStyles } from './TemplateStyles.js';
 
@@ -28,35 +29,40 @@ export function MenuView({ menu }: { menu: Menu }) {
 
   const themeStyle = buildThemeStyle(menu.theme);
 
+  // The page wrapper holds the theme CSS variables and the
+  // viewport-scale layers (background + decorations). The actual menu
+  // content lives inside a fixed-size canvas that scales to fit.
   return (
     <div className="menu-page" style={themeStyle}>
       <BackgroundLayer theme={menu.theme} />
       <Decorations decorations={menu.decorations} />
-      <TemplateStyles template={template} selector={`.${gridClass}`} />
-      <header className="menu-header">
-        <h1>{menu.title}</h1>
-      </header>
-      <div className={`menu-grid ${gridClass}`}>
-        {template.regions.map((region) => {
-          const slots = slotsByRegion.get(region.id) ?? [];
-          if (slots.length === 0) {
+      <ScalableMenu>
+        <TemplateStyles template={template} selector={`.${gridClass}`} />
+        <header className="menu-header">
+          <h1>{menu.title}</h1>
+        </header>
+        <div className={`menu-grid ${gridClass}`}>
+          {template.regions.map((region) => {
+            const slots = slotsByRegion.get(region.id) ?? [];
+            if (slots.length === 0) {
+              return (
+                <div
+                  key={region.id}
+                  className="menu-region menu-region--empty"
+                  style={{ gridArea: region.id }}
+                />
+              );
+            }
             return (
-              <div
-                key={region.id}
-                className="menu-region menu-region--empty"
-                style={{ gridArea: region.id }}
-              />
+              <div key={region.id} className="menu-region" style={{ gridArea: region.id }}>
+                {slots.map((slot) => (
+                  <Slot key={slot.id} slot={slot} />
+                ))}
+              </div>
             );
-          }
-          return (
-            <div key={region.id} className="menu-region" style={{ gridArea: region.id }}>
-              {slots.map((slot) => (
-                <Slot key={slot.id} slot={slot} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
+          })}
+        </div>
+      </ScalableMenu>
     </div>
   );
 }
@@ -86,7 +92,6 @@ function BackgroundLayer({ theme }: { theme: Theme | undefined }) {
   if (bg.type === 'color') {
     return <div className="menu-bg menu-bg--color" style={{ background: bg.color }} />;
   }
-  // image
   const fit = bg.fit ?? 'cover';
   const overlay = bg.overlayOpacity ?? 0;
   return (

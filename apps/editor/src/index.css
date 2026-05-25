@@ -1325,6 +1325,63 @@ textarea.field__input {
   border: 1px solid var(--border);
 }
 
+/* === Preview modal === */
+
+.preview-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 60;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-modal {
+  width: 100%;
+  max-width: 96rem;
+  height: 100%;
+  max-height: 92vh;
+  background: #0d0a07;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.preview-modal__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.preview-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preview-modal__frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #1a1612;
+  display: block;
+}
+
 /* === Asset picker === */
 
 .asset-picker__upload {

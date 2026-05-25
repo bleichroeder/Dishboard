@@ -33,9 +33,10 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
 
 a {
@@ -49,17 +50,16 @@ code {
 }
 
 main {
-  padding: 2rem;
-  max-width: 100rem;
-  margin: 0 auto;
-  min-height: 100vh;
+  margin: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
-/* Per-menu theme background — fixed layer behind everything, supplied by
-   MenuView's <BackgroundLayer />. The menu content stays above it. */
+/* === Background + decoration layers (viewport-scale, outside the canvas) === */
+
 .menu-bg {
   position: fixed;
   inset: 0;
@@ -94,16 +94,38 @@ main {
   display: contents;
 }
 
+/* === Scalable canvas: menu content renders at a fixed 1920×1080 design
+   size and the parent stage scales it to fit. Kiosk TV scale=1; smaller
+   windows or the preview modal scale down. === */
+
+.menu-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-canvas {
+  flex: 0 0 auto;
+  transform-origin: center center;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 3rem;
+  gap: 1rem;
+}
+
+/* === Menu header + grid (live inside the canvas) === */
+
 .menu-header {
   text-align: center;
-  margin-bottom: 1.5rem;
-  position: relative;
-  z-index: 1;
+  margin: 0 0 1.25rem;
 }
 
 .menu-header h1 {
   font-family: var(--theme-font-price, var(--font-marker));
-  font-size: calc(clamp(2.5rem, 5.5vw, 4.5rem) * var(--theme-title-scale, 1));
+  font-size: calc(6rem * var(--theme-title-scale, 1));
   letter-spacing: 0.04em;
   color: var(--theme-accent, var(--accent));
   margin: 0;
@@ -115,9 +137,10 @@ main {
 
 .menu-grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.75rem;
   width: 100%;
   flex: 1;
+  min-height: 0;
 }
 
 .menu-region {
@@ -134,8 +157,8 @@ main {
 .section {
   background: var(--theme-section-bg, var(--bg-elevated));
   border: 1px solid var(--border);
-  border-radius: 0.875rem;
-  padding: 1.5rem;
+  border-radius: 1rem;
+  padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow);
   position: relative;
   min-width: 0;
@@ -143,14 +166,14 @@ main {
 }
 
 .section__header {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.875rem;
   padding-bottom: 0.625rem;
   border-bottom: 2px dashed rgba(255, 251, 230, 0.35);
 }
 
 .section__title {
   font-family: var(--theme-font-display, var(--font-display));
-  font-size: calc(clamp(1.5rem, 2.6vw, 2.25rem) * var(--theme-section-title-scale, 1));
+  font-size: calc(3rem * var(--theme-section-title-scale, 1));
   color: var(--theme-section-title, var(--section-title));
   margin: 0;
   font-weight: 400;
@@ -166,7 +189,7 @@ main {
 .section__description {
   margin: 0.5rem 0 0;
   color: var(--text-dim);
-  font-size: 0.875rem;
+  font-size: 1.0625rem;
   font-family: 'Georgia', serif;
   font-style: italic;
   line-height: 1.4;
@@ -178,11 +201,11 @@ main {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background: var(--accent-strong);
-  box-shadow: 0 0 0 0.3rem rgba(255, 200, 87, 0.18);
+  box-shadow: 0 0 0 0.375rem rgba(255, 200, 87, 0.18);
   animation: rotating-dot 2s ease-in-out infinite;
 }
 
@@ -203,7 +226,7 @@ main {
 }
 
 .item {
-  padding: 0.625rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px dotted rgba(226, 211, 192, 0.45);
 }
 
@@ -214,7 +237,7 @@ main {
 .item__head {
   display: flex;
   align-items: baseline;
-  gap: 0.875rem;
+  gap: 1rem;
   justify-content: space-between;
 }
 
@@ -222,7 +245,7 @@ main {
   font-family: var(--theme-font-body, var(--font-body));
   font-weight: 700;
   color: var(--theme-page-text, var(--text));
-  font-size: calc(1em * var(--theme-item-scale, 1));
+  font-size: calc(1.5rem * var(--theme-item-scale, 1));
   text-shadow:
     0 2px 2px rgba(0, 0, 0, 0.55),
     0 0 1px rgba(255, 255, 255, 0.4);
@@ -233,7 +256,7 @@ main {
   font-family: var(--theme-font-price, var(--font-marker));
   font-weight: 400;
   color: var(--theme-price, var(--text));
-  font-size: calc(1em * var(--theme-price-scale, 1));
+  font-size: calc(1.5rem * var(--theme-price-scale, 1));
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   text-shadow:
@@ -245,7 +268,7 @@ main {
 .item__description {
   margin: 0.25rem 0 0;
   color: var(--text-dim);
-  font-size: 0.9rem;
+  font-size: 1.125rem;
   font-style: italic;
   line-height: 1.4;
   opacity: 0.9;
@@ -254,16 +277,16 @@ main {
 .item__ingredients {
   margin: 0.25rem 0 0;
   color: var(--text-faint);
-  font-size: 0.8125rem;
+  font-size: 1rem;
   font-style: italic;
   line-height: 1.35;
 }
 
 .item__sold-out-badge {
   display: inline-block;
-  margin-top: 0.25rem;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.6875rem;
+  margin-top: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   background: #d32f2f;
@@ -275,23 +298,27 @@ main {
 /* Style variants */
 
 .items--cards .item {
-  padding: 0.875rem 0;
+  padding: 1rem 0;
 }
 
 .items--cards .item__name {
-  font-size: 1.125rem;
+  font-size: calc(1.625rem * var(--theme-item-scale, 1));
 }
 
 .items--list .item {
-  padding: 0.5rem 0;
+  padding: 0.625rem 0;
+}
+
+.items--list .item__name {
+  font-size: calc(1.375rem * var(--theme-item-scale, 1));
 }
 
 .items--compact .item {
-  padding: 0.375rem 0;
+  padding: 0.5rem 0;
 }
 
 .items--compact .item__name {
-  font-size: 0.9375rem;
+  font-size: calc(1.25rem * var(--theme-item-scale, 1));
 }
 
 /* Sold out */
@@ -308,16 +335,17 @@ main {
   opacity: 0.5;
 }
 
-/* Footer */
+/* === Footer (viewport-scale, outside the canvas) === */
 
 .viewer-footer {
-  margin-top: 1.5rem;
-  padding-top: 0.875rem;
-  border-top: 1px solid var(--border);
+  padding: 0.625rem 1rem;
   text-align: center;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--text-faint);
   font-family: var(--font-body);
+  background: rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 1;
 }
 
 .viewer-error {
@@ -335,7 +363,7 @@ main {
   font-family: var(--font-body);
 }
 
-/* === Decorations (chef-pop + food-drop) === */
+/* === Decorations (chef-pop + food-drop) — viewport-scale === */
 
 .chef-pop {
   position: fixed;
@@ -458,22 +486,5 @@ main {
   100% {
     top: 100vh;
     transform: translateX(-50%) rotate(720deg);
-  }
-}
-
-/* Phone breakpoint */
-
-@media (max-width: 767px) {
-  main {
-    padding: 1rem;
-  }
-  .menu-header {
-    margin-bottom: 1rem;
-  }
-  .menu-grid {
-    gap: 1rem;
-  }
-  .section {
-    padding: 1rem;
   }
 }

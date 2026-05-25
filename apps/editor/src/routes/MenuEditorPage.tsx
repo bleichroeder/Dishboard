@@ -11,6 +11,7 @@ import {
 import { api } from '../api.js';
 import { uid } from '../lib/ids.js';
 import { DecorationsEditor } from '../components/DecorationsEditor.js';
+import { PreviewModal } from '../components/PreviewModal.js';
 import { SlotEditor } from '../components/SlotEditor.js';
 import { ThemeEditor } from '../components/ThemeEditor.js';
 
@@ -20,6 +21,7 @@ export function MenuEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [dirty, setDirty] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -125,15 +127,18 @@ export function MenuEditorPage() {
         </div>
         <div className="editor-toolbar__actions">
           {savingState === 'saved' && !dirty && <span className="saved-pill">Saved</span>}
-          <a
-            href={`${import.meta.env.VITE_VIEWER_URL ?? ''}/m/${menu.slug}`}
-            target="_blank"
-            rel="noopener"
+          <button
+            type="button"
             className="btn btn--secondary"
-            title={dirty ? 'Preview shows the last saved version' : 'Open viewer in a new tab'}
+            onClick={() => setPreviewOpen(true)}
+            title={
+              dirty
+                ? 'Preview shows the last saved version — save first to see edits'
+                : 'Open viewer in a modal'
+            }
           >
             Preview
-          </a>
+          </button>
           <button
             type="button"
             className="btn btn--primary"
@@ -203,6 +208,8 @@ export function MenuEditorPage() {
           );
         })}
       </div>
+
+      {previewOpen && <PreviewModal slug={menu.slug} onClose={() => setPreviewOpen(false)} />}
     </div>
   );
 }
