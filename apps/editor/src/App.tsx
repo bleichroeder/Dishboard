@@ -1,58 +1,35 @@
-import { useEffect, useState } from 'react';
-
-type MenuListItem = {
-  id: string;
-  slug: string;
-  title: string;
-  updatedAt: number;
-};
-
-type AuthState = { authenticated: boolean; username: string | null };
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from './auth.js';
+import { Layout } from './components/Layout.js';
+import { LoginPage } from './routes/LoginPage.js';
+import { MenuEditorPage } from './routes/MenuEditorPage.js';
+import { MenuListPage } from './routes/MenuListPage.js';
+import { SchedulePage } from './routes/SchedulePage.js';
 
 export function App() {
-  const [menus, setMenus] = useState<MenuListItem[] | null>(null);
-  const [auth, setAuth] = useState<AuthState | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/menus').then((r) => r.json() as Promise<{ menus: MenuListItem[] }>),
-      fetch('/api/auth/me').then((r) => r.json() as Promise<AuthState>),
-    ])
-      .then(([m, a]) => {
-        setMenus(m.menus);
-        setAuth(a);
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
-
   return (
-    <main>
-      <h1>Dishboard Editor</h1>
-      <p>Phase 1 placeholder — full CRUD UI lands in Phase 3.</p>
-      <p>
-        Auth:{' '}
-        <strong>
-          {auth ? (auth.authenticated ? `signed in as ${auth.username}` : 'not signed in') : '…'}
-        </strong>
-      </p>
-      {error && <pre style={{ color: 'crimson' }}>error: {error}</pre>}
-      {menus && (
-        <>
-          <h2>Menus ({menus.length})</h2>
-          {menus.length === 0 ? (
-            <p>No menus yet.</p>
-          ) : (
-            <ul>
-              {menus.map((m) => (
-                <li key={m.id}>
-                  <strong>{m.title}</strong> — <code>/{m.slug}</code>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </main>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <Protected>
+            <Layout />
+          </Protected>
+        }
+      >
+        <Route index element={<MenuListPage />} />
+        <Route path="menus/:slug" element={<MenuEditorPage />} />
+        <Route path="schedule" element={<SchedulePage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
+}
+
+function Protected({ children }: { children: React.ReactNode }) {
+  const { status } = useAuth();
+  if (status === 'loading') return <div className="splash">Loading…</div>;
+  if (status === 'anonymous') return <Navigate to="/login" replace />;
+  return <>{children}</>;
 }
