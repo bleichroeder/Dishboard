@@ -1,27 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { produce, type Draft } from 'immer';
-import {
-  getTemplate,
-  TEMPLATES,
-  type Menu,
-  type SectionStyle,
-  type Slot as SlotT,
-} from '@dishboard/shared';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import type { Menu } from '@dishboard/shared';
 import { api } from '../api.js';
-import { uid } from '../lib/ids.js';
-import { DecorationsEditor } from '../components/DecorationsEditor.js';
 import { PreviewModal } from '../components/PreviewModal.js';
-import { SlotEditor } from '../components/SlotEditor.js';
-import { ThemeEditor } from '../components/ThemeEditor.js';
+import { EditCanvas } from '../edit/EditCanvas.js';
+import { EditorProvider, useEditor } from '../edit/EditorContext.js';
+import { SidePanel } from '../edit/SidePanel.js';
+import './../edit/menu-render.css';
 
 export function MenuEditorPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [menu, setMenu] = useState<Menu | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [dirty, setDirty] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -30,10 +20,7 @@ export function MenuEditorPage() {
     api.menus
       .get(slug)
       .then((m) => {
-        if (alive) {
-          setMenu(m);
-          setDirty(false);
-        }
+        if (alive) setMenu(m);
       })
       .catch((e: unknown) => {
         if (alive) setError(e instanceof Error ? e.message : String(e));
@@ -42,29 +29,6 @@ export function MenuEditorPage() {
       alive = false;
     };
   }, [slug]);
-
-  const update = useCallback((fn: (draft: Draft<Menu>) => void) => {
-    setMenu((m) => (m ? produce(m, fn) : m));
-    setDirty(true);
-    setSavingState('idle');
-  }, []);
-
-  const template = useMemo(() => (menu ? getTemplate(menu.templateId) : undefined), [menu]);
-
-  async function onSave() {
-    if (!menu) return;
-    setSavingState('saving');
-    setError(null);
-    try {
-      const saved = await api.menus.update(menu.slug, menu);
-      setMenu(saved);
-      setDirty(false);
-      setSavingState('saved');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
-      setSavingState('idle');
-    }
-  }
 
   if (error && !menu) {
     return (
@@ -76,7 +40,7 @@ export function MenuEditorPage() {
       </div>
     );
   }
-  if (!menu || !template) {
+  if (!menu) {
     return (
       <div className="page">
         <div className="muted">Loading…</div>
@@ -84,58 +48,128 @@ export function MenuEditorPage() {
     );
   }
 
-  const slotsByRegion = new Map<string, SlotT[]>();
-  for (const slot of menu.slots) {
-    const list = slotsByRegion.get(slot.regionId) ?? [];
-    list.push(slot);
-    slotsByRegion.set(slot.regionId, list);
-  }
-  for (const list of slotsByRegion.values()) list.sort((a, b) => a.order - b.order);
+  return <Editor initialMenu={menu} key={menu.id} />;
+}
 
-  function addSlot(regionId: string) {
-    update((d) => {
-      const existing = d.slots.filter((s) => s.regionId === regionId);
-      const nextOrder = existing.length > 0 ? Math.max(...existing.map((s) => s.order)) + 1 : 0;
-      d.slots.push({
-        id: uid('slot'),
-        regionId,
-        order: nextOrder,
-        variants: [
-          {
-            id: uid('variant'),
-            title: 'New section',
-            style: 'cards' as SectionStyle,
-            items: [],
-          },
-        ],
-      });
-    });
-  }
+function Editor({ initialMenu }: { initialMenu: Menu }) {
+  const [savedMenu, setSavedMenu] = useState<Menu>(initialMenu);
+  const dirtyRef = useRef<Menu>(initialMenu);
+  const [dirty, setDirty] = useState(false);
+  const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = useCallback((next: Menu) => {
+    dirtyRef.current = next;
+    setDirty(true);
+    setSavingState('idle');
+  }, []);
 
   return (
-    <div className="page editor-page">
-      <div className="editor-toolbar">
-        <Link to="/" className="link-button">
+    <EditorProvider initialMenu={initialMenu} onChange={handleChange}>
+      <EditorShell
+        savedMenu={savedMenu}
+        setSavedMenu={setSavedMenu}
+        dirty={dirty}
+        setDirty={setDirty}
+        savingState={savingState}
+        setSavingState={setSavingState}
+        error={error}
+        setError={setError}
+        dirtyRef={dirtyRef}
+      />
+    </EditorProvider>
+  );
+}
+
+function EditorShell({
+  savedMenu,
+  setSavedMenu,
+  dirty,
+  setDirty,
+  savingState,
+  setSavingState,
+  error,
+  setError,
+  dirtyRef,
+}: {
+  savedMenu: Menu;
+  setSavedMenu: (m: Menu) => void;
+  dirty: boolean;
+  setDirty: (d: boolean) => void;
+  savingState: 'idle' | 'saving' | 'saved';
+  setSavingState: (s: 'idle' | 'saving' | 'saved') => void;
+  error: string | null;
+  setError: (e: string | null) => void;
+  dirtyRef: React.MutableRefObject<Menu>;
+}) {
+  const { menu, update } = useEditor();
+  const navigate = useNavigate();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
+
+  async function onSave() {
+    setSavingState('saving');
+    setError(null);
+    try {
+      const toSave = dirtyRef.current;
+      const saved = await api.menus.update(toSave.slug, toSave);
+      setSavedMenu(saved);
+      setDirty(false);
+      setSavingState('saved');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed');
+      setSavingState('idle');
+    }
+  }
+
+  // Keyboard shortcut: Cmd/Ctrl+S to save
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (dirty && savingState !== 'saving') void onSave();
+      }
+      if (e.key === 'Escape') {
+        // deselect handled by canvas click; this is a safety net for popovers
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, savingState]);
+
+  // Avoid unused-var warnings for savedMenu while still re-rendering on save.
+  void savedMenu;
+
+  return (
+    <div className={`edit-shell${panelOpen ? '' : ' edit-shell--panel-collapsed'}`}>
+      <header className="edit-toolbar">
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => navigate('/')}
+          title="Back to menus"
+        >
           ← Menus
-        </Link>
-        <div className="editor-toolbar__title">
-          <input
-            className="editor-toolbar__title-input"
-            value={menu.title}
-            onChange={(e) => update((d) => void (d.title = e.target.value))}
-          />
-        </div>
-        <div className="editor-toolbar__actions">
+        </button>
+        <input
+          className="edit-toolbar__title"
+          value={menu.title}
+          onChange={(e) =>
+            update((d) => {
+              d.title = e.target.value;
+            })
+          }
+          aria-label="Menu title"
+        />
+        {error && <div className="edit-toolbar__error">{error}</div>}
+        <div className="edit-toolbar__actions">
           {savingState === 'saved' && !dirty && <span className="saved-pill">Saved</span>}
           <button
             type="button"
             className="btn btn--secondary"
             onClick={() => setPreviewOpen(true)}
-            title={
-              dirty
-                ? 'Preview shows the last saved version — save first to see edits'
-                : 'Open viewer in a modal'
-            }
+            title={dirty ? 'Preview shows the last saved version' : 'Open viewer'}
           >
             Preview
           </button>
@@ -147,79 +181,24 @@ export function MenuEditorPage() {
           >
             {savingState === 'saving' ? 'Saving…' : 'Save'}
           </button>
-        </div>
-      </div>
-
-      {error && <div className="banner banner--error">{error}</div>}
-
-      <section className="editor-card">
-        <label className="field">
-          <span className="field__label">Template</span>
-          <select
-            className="field__input"
-            value={menu.templateId}
-            onChange={(e) =>
-              update((d) => {
-                d.templateId = e.target.value;
-              })
-            }
+          <button
+            type="button"
+            className="edit-toolbar__panel-toggle"
+            onClick={() => setPanelOpen((v) => !v)}
+            aria-label={panelOpen ? 'Collapse side panel' : 'Expand side panel'}
+            title={panelOpen ? 'Hide panel' : 'Show panel'}
           >
-            {TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-          <span className="field__hint">{template.description}</span>
-        </label>
-        {orphanWarnings(menu, template).map((msg, i) => (
-          <div key={i} className="banner banner--warn">
-            {msg}
-          </div>
-        ))}
-      </section>
+            {panelOpen ? '⟩' : '⟨'}
+          </button>
+        </div>
+      </header>
 
-      <ThemeEditor menu={menu} update={update} />
-      <DecorationsEditor menu={menu} update={update} />
-
-      <div className="region-grid">
-        {template.regions.map((region) => {
-          const slots = slotsByRegion.get(region.id) ?? [];
-          return (
-            <section key={region.id} className="region-panel">
-              <header className="region-panel__head">
-                <h2 className="region-panel__title">{region.label}</h2>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--small"
-                  onClick={() => addSlot(region.id)}
-                >
-                  + Add slot
-                </button>
-              </header>
-              {slots.length === 0 ? (
-                <div className="region-panel__empty">Empty region</div>
-              ) : (
-                slots.map((slot) => (
-                  <SlotEditor key={slot.id} slot={slot} template={template} update={update} />
-                ))
-              )}
-            </section>
-          );
-        })}
+      <div className="edit-body">
+        <EditCanvas />
+        {panelOpen && <SidePanel />}
       </div>
 
       {previewOpen && <PreviewModal slug={menu.slug} onClose={() => setPreviewOpen(false)} />}
     </div>
   );
-}
-
-function orphanWarnings(menu: Menu, template: ReturnType<typeof getTemplate>): string[] {
-  if (!template) return [];
-  const valid = new Set(template.regions.map((r) => r.id));
-  const orphans = menu.slots.filter((s) => !valid.has(s.regionId));
-  if (orphans.length === 0) return [];
-  return [
-    `${orphans.length} slot${orphans.length === 1 ? '' : 's'} reference regions that don't exist in this template. Reassign them or switch templates before saving.`,
-  ];
 }

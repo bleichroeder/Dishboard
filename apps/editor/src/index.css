@@ -1616,6 +1616,229 @@ textarea.field__input {
   align-self: flex-start;
 }
 
+/* === Edit shell (new inline editor) === */
+
+.edit-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.edit-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  z-index: 5;
+}
+
+.edit-toolbar__title {
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 1px dashed transparent;
+  color: var(--text);
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.edit-toolbar__title:hover,
+.edit-toolbar__title:focus {
+  border-color: var(--border);
+  background: var(--bg);
+  outline: none;
+}
+
+.edit-toolbar__error {
+  font-size: 0.8125rem;
+  color: var(--danger);
+}
+
+.edit-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edit-toolbar__panel-toggle {
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.edit-toolbar__panel-toggle:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.edit-body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+.edit-canvas-area {
+  flex: 1 1 auto;
+  overflow: auto;
+  background: #0e0a07;
+  padding: 1.5rem;
+  min-width: 0;
+}
+
+.edit-canvas-fit {
+  width: 100%;
+  display: block;
+  position: relative;
+}
+
+.edit-canvas-scaler {
+  /* width set inline (1920), transform scale applied inline */
+  transform-origin: top left;
+}
+
+/* === Side panel === */
+
+.side-panel {
+  flex: 0 0 24rem;
+  max-width: 28rem;
+  min-width: 18rem;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.side-panel__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.side-panel__tab {
+  flex: 1 1 auto;
+  padding: 0.625rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.side-panel__tab:hover {
+  color: var(--text);
+}
+
+.side-panel__tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.side-panel__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-section__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.panel-subsection__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panel-subsection__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-actions {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.region-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.region-list__item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.variant-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.item-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.item-detail__row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 /* === Mobile === */
 
 @media (max-width: 720px) {
