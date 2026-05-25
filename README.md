@@ -79,21 +79,26 @@ The migration reads `Menus/*/menu.json` and `schedule.json`, builds menus using 
 
 ## API
 
-| Method | Path                    | Auth | Notes                      |
-| ------ | ----------------------- | ---- | -------------------------- |
-| GET    | `/health`               |      | liveness probe             |
-| GET    | `/api/templates`        |      | static template registry   |
-| GET    | `/api/menus`            |      | list                       |
-| GET    | `/api/menus/:slug`      |      | full menu                  |
-| POST   | `/api/menus`            | ✓    | create                     |
-| PUT    | `/api/menus/:slug`      | ✓    | replace                    |
-| DELETE | `/api/menus/:slug`      | ✓    |                            |
-| GET    | `/api/schedule`         |      | full schedule              |
-| GET    | `/api/schedule/current` |      | resolve menu for now       |
-| PUT    | `/api/schedule`         | ✓    | replace                    |
-| POST   | `/api/auth/login`       |      | sets signed session cookie |
-| POST   | `/api/auth/logout`      |      |                            |
-| GET    | `/api/auth/me`          |      | check session              |
+| Method | Path                       | Auth | Notes                       |
+| ------ | -------------------------- | ---- | --------------------------- |
+| GET    | `/health`                  |      | liveness probe              |
+| GET    | `/api/templates`           |      | static template registry    |
+| GET    | `/api/menus`               |      | list                        |
+| GET    | `/api/menus/:slug`         |      | full menu                   |
+| POST   | `/api/menus`               | ✓    | create                      |
+| PUT    | `/api/menus/:slug`         | ✓    | replace                     |
+| DELETE | `/api/menus/:slug`         | ✓    |                             |
+| GET    | `/api/schedule`            |      | full schedule               |
+| GET    | `/api/schedule/current`    |      | resolve menu for now        |
+| PUT    | `/api/schedule`            | ✓    | replace                     |
+| GET    | `/api/integrations`        |      | status (no secrets leaked)  |
+| PUT    | `/api/integrations/square` | ✓    | save Square access token    |
+| DELETE | `/api/integrations/square` | ✓    | remove Square token         |
+| GET    | `/api/square/search?q=`    | ✓    | proxy Square catalog search |
+| POST   | `/api/square/sync`         | ✓    | trigger immediate sync      |
+| POST   | `/api/auth/login`          |      | sets signed session cookie  |
+| POST   | `/api/auth/logout`         |      |                             |
+| GET    | `/api/auth/me`             |      | check session               |
 
 ## Project status
 
@@ -103,9 +108,9 @@ In active rebuild. The legacy version lives at `C:\Users\David\Desktop\Dishboard
 
 - [x] Phase 0 — Repo scaffold, workspaces, CI
 - [x] Phase 1 — Server, SQLite, slot+template schema, legacy migration, env-configured auth
-- [ ] Phase 2 — Viewer: template renderer, slot rendering (static + rotating), daypart polling
-- [ ] Phase 3 — Editor: menu CRUD, slot/variant editing, Square item picker, schedule UI
-- [ ] Phase 4 — Square background sync (price + availability)
+- [x] Phase 2 — Viewer: template renderer, slot rendering (static + rotating), daypart polling
+- [x] Phase 3 — Editor: menu CRUD, slot/variant editing, schedule UI
+- [x] Phase 4 — Square integration: token settings, item picker, background price/availability sync
 - [ ] Phase 5 — Raspberry Pi deploy: systemd unit, kiosk autostart, build pipeline
 
 ## License

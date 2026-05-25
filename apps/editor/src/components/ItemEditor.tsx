@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Draft } from 'immer';
 import type { Addon, Item, Menu } from '@dishboard/shared';
 import { uid } from '../lib/ids.js';
+import { SquareLink } from './SquareLink.js';
 
 type UpdateFn = (fn: (draft: Draft<Menu>) => void) => void;
 
@@ -73,6 +74,7 @@ export function ItemEditor({
         <div className="item-editor__title">
           <span className="item-editor__name">{item.name || '(untitled)'}</span>
           {item.price && <span className="item-editor__price">{item.price}</span>}
+          {item.squareRef && <span className="pill pill--info">Square</span>}
           {item.soldOut && <span className="pill pill--warn">sold out</span>}
           {item.hidden && <span className="pill pill--muted">hidden</span>}
         </div>
@@ -107,6 +109,8 @@ export function ItemEditor({
                   })
                 }
                 placeholder="$0.00"
+                disabled={!!item.squareRef?.trackPrice}
+                title={item.squareRef?.trackPrice ? 'Synced from Square' : undefined}
               />
             </label>
           </div>
@@ -145,6 +149,8 @@ export function ItemEditor({
                     i.soldOut = e.target.checked;
                   })
                 }
+                disabled={!!item.squareRef?.trackAvailability}
+                title={item.squareRef?.trackAvailability ? 'Synced from Square' : undefined}
               />
               <span>Sold out</span>
             </label>
@@ -160,12 +166,36 @@ export function ItemEditor({
               />
               <span>Hidden</span>
             </label>
-            {item.squareRef && (
-              <span className="pill pill--info" title={item.squareRef.itemId}>
-                Square linked
-              </span>
-            )}
           </div>
+
+          <SquareLink
+            squareRef={item.squareRef}
+            onLink={(pick) =>
+              withItem((i) => {
+                i.squareRef = {
+                  itemId: pick.objectId,
+                  trackPrice: true,
+                  trackAvailability: true,
+                };
+                if (!i.price && pick.price) i.price = pick.price;
+              })
+            }
+            onUnlink={() =>
+              withItem((i) => {
+                i.squareRef = undefined;
+              })
+            }
+            onChangeTrackPrice={(on) =>
+              withItem((i) => {
+                if (i.squareRef) i.squareRef.trackPrice = on;
+              })
+            }
+            onChangeTrackAvailability={(on) =>
+              withItem((i) => {
+                if (i.squareRef) i.squareRef.trackAvailability = on;
+              })
+            }
+          />
 
           <div className="addons-section">
             <div className="addons-section__head">
@@ -223,7 +253,10 @@ function AddonRow({
         placeholder="$"
         value={addon.price ?? ''}
         onChange={(e) => onChange({ price: e.target.value || undefined })}
+        disabled={!!addon.squareRef?.trackPrice}
+        title={addon.squareRef?.trackPrice ? 'Synced from Square' : undefined}
       />
+      {addon.squareRef && <span className="pill pill--info">Square</span>}
       <button
         type="button"
         className="btn btn--ghost btn--small"

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth.js';
 import { Layout } from './components/Layout.js';
+import { IntegrationsPage } from './routes/IntegrationsPage.js';
 import { LoginPage } from './routes/LoginPage.js';
 import { MenuEditorPage } from './routes/MenuEditorPage.js';
 import { MenuListPage } from './routes/MenuListPage.js';
@@ -21,6 +22,7 @@ export function App() {
         <Route index element={<MenuListPage />} />
         <Route path="menus/:slug" element={<MenuEditorPage />} />
         <Route path="schedule" element={<SchedulePage />} />
+        <Route path="integrations" element={<IntegrationsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

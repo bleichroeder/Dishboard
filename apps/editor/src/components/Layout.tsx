@@ -37,6 +37,9 @@ export function Layout() {
           <NavLink to="/schedule" onClick={close}>
             Schedule
           </NavLink>
+          <NavLink to="/integrations" onClick={close}>
+            Integrations
+          </NavLink>
           <div className="app-nav__spacer" />
           <span className="app-nav__user">{username}</span>
           <button type="button" className="link-button" onClick={onLogout}>

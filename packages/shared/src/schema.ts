@@ -118,3 +118,29 @@ export const scheduleSchema = z.object({
   rules: z.array(scheduleRuleSchema).default([]),
 });
 export type Schedule = z.infer<typeof scheduleSchema>;
+
+export const squareIntegrationSchema = z.object({
+  accessToken: z.string().min(1),
+  environment: z.enum(['production', 'sandbox']).default('production'),
+});
+export type SquareIntegration = z.infer<typeof squareIntegrationSchema>;
+
+export const integrationsSchema = z.object({
+  square: squareIntegrationSchema.nullable().default(null),
+});
+export type Integrations = z.infer<typeof integrationsSchema>;
+
+export type IntegrationsStatus = {
+  square: { configured: boolean; environment: 'production' | 'sandbox' | null };
+};
+
+export type SquareCatalogItem = {
+  itemId: string;
+  name: string;
+  variations: Array<{
+    variationId: string;
+    name: string;
+    price: string | null;
+    soldOut: boolean;
+  }>;
+};

@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
-import type { Menu, Schedule } from '@dishboard/shared';
+import type { Integrations, Menu, Schedule } from '@dishboard/shared';
 
 mkdirSync(path.dirname(config.dbPath), { recursive: true });
 
@@ -100,4 +100,30 @@ export function saveSchedule(schedule: Schedule): void {
     key: SCHEDULE_KEY,
     value: JSON.stringify(schedule),
   });
+}
+
+const INTEGRATIONS_KEY = 'integrations';
+
+export function getIntegrations(): Integrations {
+  const row = stmts.getSetting.get(INTEGRATIONS_KEY) as { value: string } | undefined;
+  if (!row) return { square: null };
+  try {
+    return JSON.parse(row.value) as Integrations;
+  } catch {
+    return { square: null };
+  }
+}
+
+export function saveIntegrations(integrations: Integrations): void {
+  stmts.upsertSetting.run({
+    key: INTEGRATIONS_KEY,
+    value: JSON.stringify(integrations),
+  });
+}
+
+export function listMenuRecords(): Array<{ slug: string; data: string }> {
+  return db.prepare('SELECT slug, data FROM menus').all() as Array<{
+    slug: string;
+    data: string;
+  }>;
 }

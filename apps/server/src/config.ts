@@ -20,6 +20,7 @@ export const config = {
   cookieSecret: process.env.COOKIE_SECRET ?? randomBytes(32).toString('hex'),
   sessionTimeoutSec: Number(process.env.SESSION_TIMEOUT_SEC ?? 8 * 60 * 60),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
+  squareSyncIntervalMs: Number(process.env.SQUARE_SYNC_INTERVAL_MS ?? 5 * 60_000),
 } as const;
 
 if (!config.adminPasswordHash) {

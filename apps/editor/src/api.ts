@@ -1,4 +1,10 @@
-import type { Menu, Schedule } from '@dishboard/shared';
+import type {
+  IntegrationsStatus,
+  Menu,
+  Schedule,
+  SquareCatalogItem,
+  SquareIntegration,
+} from '@dishboard/shared';
 
 export type MenuListItem = {
   id: string;
@@ -72,5 +78,27 @@ export const api = {
   schedule: {
     get: () => request<Schedule>('GET', '/api/schedule'),
     update: (schedule: Schedule) => request<Schedule>('PUT', '/api/schedule', schedule),
+  },
+  integrations: {
+    get: () => request<IntegrationsStatus>('GET', '/api/integrations'),
+    saveSquare: (integration: SquareIntegration) =>
+      request<IntegrationsStatus>('PUT', '/api/integrations/square', integration),
+    removeSquare: () => request<IntegrationsStatus>('DELETE', '/api/integrations/square'),
+  },
+  square: {
+    search: (q: string) =>
+      request<{ items: SquareCatalogItem[] }>(
+        'GET',
+        `/api/square/search?q=${encodeURIComponent(q)}`,
+      ).then((d) => d.items),
+    syncNow: () =>
+      request<{
+        startedAt: string;
+        finishedAt: string;
+        scannedRefs: number;
+        uniqueLookups: number;
+        menusUpdated: number;
+        errors: string[];
+      }>('POST', '/api/square/sync'),
   },
 };
