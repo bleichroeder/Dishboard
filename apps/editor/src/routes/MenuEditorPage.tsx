@@ -126,7 +126,7 @@ export function MenuEditorPage() {
         <div className="editor-toolbar__actions">
           {savingState === 'saved' && !dirty && <span className="saved-pill">Saved</span>}
           <a
-            href={`/m/${menu.slug}`}
+            href={`${import.meta.env.VITE_VIEWER_URL ?? ''}/m/${menu.slug}`}
             target="_blank"
             rel="noopener"
             className="btn btn--secondary"
